@@ -3,423 +3,468 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>Tetris Template Practice App</title>
+  <title>テトリス テンプレート練習機</title>
   <style>
-    * {
-      box-sizing: border-box;
-      user-select: none;
-      -webkit-user-select: none;
-    }
+    * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
     body {
-      background-color: #121214;
-      color: #ffffff;
+      background: #121214; color: #fff;
       font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      margin: 0;
-      padding: 10px;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: flex-start;
-      min-height: 100vh;
+      margin: 0; padding: 10px;
+      display: flex; flex-direction: column; align-items: center; min-height: 100vh;
     }
-    h1 {
-      font-size: 1.2rem;
-      margin: 0 0 8px 0;
-      text-align: center;
-    }
+    h1 { font-size: 1.1rem; margin: 0 0 8px; text-align: center; }
+    .view-section { width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: center; }
+    .hidden { display: none !important; }
     .controls-panel {
-      margin-bottom: 8px;
-      display: flex;
-      gap: 8px;
-      flex-wrap: wrap;
-      justify-content: center;
-      align-items: center;
+      margin-bottom: 8px; display: flex; gap: 6px; flex-wrap: wrap;
+      justify-content: center; align-items: center; width: 100%;
     }
     select, button, input, textarea {
-      background: #2a2a30;
-      color: #fff;
-      border: 1px solid #444;
-      padding: 6px 10px;
-      border-radius: 4px;
-      font-size: 0.85rem;
+      background: #2a2a30; color: #fff; border: 1px solid #444;
+      padding: 6px 8px; border-radius: 4px; font-size: 0.85rem;
     }
-    button:active {
-      background: #444;
+    button { cursor: pointer; }
+    button:active { background: #444; }
+    .btn-edit { background: #3a3a50; border-color: #66a; }
+    .btn-pause { background: #5a4a20; border-color: #886020; }
+    .btn-pause.active { background: #205a20; border-color: #208820; }
+    .step-info {
+      background: #1e1e28; border: 1px solid #445; padding: 6px 10px;
+      border-radius: 4px; margin-bottom: 8px; font-size: 0.85rem;
+      width: 100%; text-align: center; color: #5cf; font-weight: bold;
+      transition: background 0.3s, color 0.3s;
     }
-    .game-container {
-      display: flex;
-      gap: 12px;
-      justify-content: center;
-      align-items: flex-start;
+    .step-info.cleared { background: #1b4d2e; color: #7ef0a0; }
+    .game-container { display: flex; gap: 10px; justify-content: center; align-items: flex-start; position: relative; }
+    .side-panel { display: flex; flex-direction: column; gap: 8px; width: 66px; }
+    .preview-box { background: #1e1e24; border: 2px solid #333; border-radius: 4px; padding: 4px; text-align: center; }
+    .preview-title { font-size: 0.7rem; color: #aaa; margin-bottom: 2px; }
+    .canvas-wrapper { position: relative; width: 200px; height: 400px; }
+    canvas#mainCanvas { background: #000; border: 2px solid #333; border-radius: 4px; display: block; }
+    .pause-overlay {
+      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+      background: rgba(0,0,0,0.75); border-radius: 4px;
+      display: flex; flex-direction: column; justify-content: center; align-items: center;
+      color: #fff; font-weight: bold; font-size: 1.4rem; letter-spacing: 2px;
+      backdrop-filter: blur(2px); z-index: 10;
     }
-    .side-panel {
-      display: flex;
-      flex-direction: column;
-      gap: 10px;
-      width: 70px;
+    .pause-overlay span { font-size: 0.75rem; color: #aaa; margin-top: 6px; font-weight: normal; letter-spacing: 0; }
+    .toast-message {
+      position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
+      background: rgba(10,30,20,0.92); border: 2px solid #5cf; color: #fff;
+      padding: 10px 18px; border-radius: 8px; font-size: 0.95rem; font-weight: bold;
+      text-align: center; pointer-events: none; opacity: 0; transition: opacity 0.3s;
+      z-index: 20; box-shadow: 0 4px 12px rgba(0,0,0,0.5); white-space: nowrap;
     }
-    .preview-box {
-      background: #1e1e24;
-      border: 2px solid #333;
-      border-radius: 4px;
-      padding: 5px;
-      text-align: center;
-    }
-    .preview-title {
-      font-size: 0.75rem;
-      color: #aaa;
-      margin-bottom: 4px;
-    }
-    canvas {
-      background: #000;
-      border: 2px solid #333;
-      border-radius: 4px;
-      display: block;
-    }
+    .toast-message.show { opacity: 1; }
     .mobile-controls {
-      display: grid;
-      grid-template-columns: repeat(4, 1fr);
-      gap: 6px;
-      margin-top: 12px;
-      width: 100%;
-      max-width: 340px;
+      display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
+      margin-top: 10px; width: 100%;
     }
     .m-btn {
-      background: #2a2a35;
-      border: 1px solid #444;
-      color: white;
-      padding: 12px 0;
-      text-align: center;
-      border-radius: 6px;
-      font-size: 1rem;
-      font-weight: bold;
-      touch-action: manipulation;
+      background: #2a2a35; border: 1px solid #444; color: white;
+      padding: 14px 0; text-align: center; border-radius: 6px;
+      font-size: 1rem; font-weight: bold; touch-action: manipulation;
     }
-    .m-btn:active {
-      background: #555;
+    .m-btn:active { background: #555; }
+    .editor-container, .settings-panel {
+      background: #1a1a20; border: 1px solid #333; border-radius: 8px;
+      padding: 14px; width: 100%; margin-top: 12px;
     }
-    .span-2 { grid-column: span 2; }
-
-    /* テンプレ作成エリア */
-    .template-editor {
-      margin-top: 16px;
-      width: 100%;
-      max-width: 420px;
-      background: #1a1a20;
-      border: 1px solid #333;
-      border-radius: 8px;
-      padding: 12px;
+    .editor-container h2, .settings-panel h3 {
+      margin: 0 0 10px; font-size: 1rem;
+      display: flex; justify-content: space-between; align-items: center;
     }
-    .template-editor h3 {
-      margin: 0 0 8px 0;
-      font-size: 0.95rem;
-      color: #ccc;
+    .editor-container textarea {
+      width: 100%; height: 140px; font-family: monospace; font-size: 0.85rem;
+      resize: vertical; margin-bottom: 8px; user-select: text; -webkit-user-select: text;
     }
-    .template-editor textarea {
-      width: 100%;
-      height: 120px;
-      font-family: monospace;
-      font-size: 0.8rem;
-      resize: vertical;
-      margin-bottom: 8px;
-    }
-    .template-editor .row {
-      display: flex;
-      gap: 8px;
-      margin-bottom: 8px;
-      flex-wrap: wrap;
-    }
-    .template-editor input[type="text"] {
-      flex: 1;
-      min-width: 120px;
-    }
+    .editor-container input[type="text"] { width: 100%; margin-bottom: 8px; user-select: text; -webkit-user-select: text; }
+    .row { display: flex; gap: 8px; justify-content: flex-end; margin-bottom: 10px; }
     .hint {
-      font-size: 0.75rem;
-      color: #888;
-      margin-top: 4px;
-      line-height: 1.4;
+      font-size: 0.75rem; color: #aaa; margin-bottom: 8px; line-height: 1.4;
+      background: #22222a; padding: 8px; border-radius: 4px;
     }
-    .saved-list {
-      margin-top: 10px;
-      font-size: 0.8rem;
-    }
-    .saved-item {
-      display: flex;
-      justify-content: space-between;
-      align-items: center;
-      padding: 4px 0;
-      border-bottom: 1px solid #333;
-    }
-    .saved-item button {
-      padding: 2px 8px;
-      font-size: 0.75rem;
-      background: #4a2020;
-    }
+    .saved-list { margin-top: 10px; font-size: 0.85rem; }
+    .saved-item { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid #333; }
+    .saved-item .btn-del { padding: 2px 6px; font-size: 0.75rem; background: #5a2020; border-color: #733; }
+    .settings-row { margin-bottom: 10px; font-size: 0.85rem; }
+    .settings-row label { display: block; margin-bottom: 4px; color: #ccc; }
   </style>
 </head>
 <body>
   <h1>テトリス テンプレート練習機</h1>
 
-  <div class="controls-panel">
-    <label>テンプレ:
-      <select id="templateSelect">
-        <option value="none">なし（フリー）</option>
-        <option value="TSD_OPENING">開幕TSD</option>
-        <option value="TKI3">TKI3</option>
-      </select>
-    </label>
-    <button id="mirrorBtn">反転: OFF</button>
-    <button id="resetBtn">リセット</button>
-  </div>
+  <div id="gameView" class="view-section">
+    <div class="controls-panel">
+      <label>テンプレ:
+        <select id="templateSelect">
+          <option value="none">フリー（なし）</option>
+          <option value="TSD_OPENING">開幕TSD</option>
+          <option value="TKI3">TKI3</option>
+        </select>
+      </label>
+      <button id="mirrorBtn">反転: OFF</button>
+      <button id="pauseBtn" class="btn-pause">⏸ 一時停止</button>
+      <button id="resetBtn">リセット</button>
+      <button id="openEditorBtn" class="btn-edit">⚙ 編集</button>
+      <button id="openSettingsBtn" class="btn-edit">設定</button>
+    </div>
 
-  <div class="game-container">
-    <div class="side-panel">
-      <div class="preview-box">
-        <div class="preview-title">HOLD</div>
-        <canvas id="holdCanvas" width="60" height="60"></canvas>
+    <div class="step-info" id="stepDisplay">フリー練習モード</div>
+
+    <div class="game-container">
+      <div class="side-panel">
+        <div class="preview-box">
+          <div class="preview-title">HOLD</div>
+          <canvas id="holdCanvas" width="58" height="58"></canvas>
+        </div>
+      </div>
+      <div class="canvas-wrapper">
+        <canvas id="mainCanvas" width="200" height="400"></canvas>
+        <div id="pauseOverlay" class="pause-overlay hidden">
+          PAUSED
+          <span>Pキー または 一時停止ボタンで解除</span>
+        </div>
+        <div id="toastMessage" class="toast-message"></div>
+      </div>
+      <div class="side-panel">
+        <div class="preview-box">
+          <div class="preview-title">NEXT</div>
+          <canvas id="nextCanvas" width="58" height="180"></canvas>
+        </div>
       </div>
     </div>
-    <canvas id="mainCanvas" width="200" height="400"></canvas>
-    <div class="side-panel">
-      <div class="preview-box">
-        <div class="preview-title">NEXT</div>
-        <canvas id="nextCanvas" width="60" height="180"></canvas>
+
+    <div class="mobile-controls">
+      <div class="m-btn" id="btnHold">HOLD</div>
+      <div class="m-btn" id="btnRotCCW">↺</div>
+      <div class="m-btn" id="btnRotCW">↻</div>
+      <div class="m-btn" id="btnHardDrop">DROP</div>
+      <div class="m-btn" id="btnLeft">←</div>
+      <div class="m-btn" id="btnDown">↓</div>
+      <div class="m-btn" id="btnRight">→</div>
+      <div class="m-btn" id="btnPauseMobile">⏸</div>
+    </div>
+  </div>
+
+  <!-- 設定画面 -->
+  <div id="settingsView" class="view-section hidden">
+    <div class="settings-panel">
+      <h3>
+        <span>設定</span>
+        <button id="closeSettingsBtn">✕ 戻る</button>
+      </h3>
+      <div class="settings-row">
+        <label>ツモ設定</label>
+        <select id="bagModeSelect">
+          <option value="normal">普通の7-bag（実戦向け）</option>
+          <option value="fixed">順番固定（形の練習向け）</option>
+        </select>
+      </div>
+      <div class="settings-row">
+        <label>左右反転</label>
+        <select id="mirrorModeSelect">
+          <option value="manual">手動</option>
+          <option value="auto">自動判定（下段ミノが3個以内）</option>
+        </select>
       </div>
     </div>
   </div>
 
-  <div class="mobile-controls">
-    <div class="m-btn" id="btnHold">HOLD</div>
-    <div class="m-btn" id="btnRotCCW">↺ (Z)</div>
-    <div class="m-btn" id="btnRotCW">↻ (X)</div>
-    <div class="m-btn" id="btnHardDrop">DROP</div>
-    <div class="m-btn" id="btnLeft">←</div>
-    <div class="m-btn" id="btnDown">↓</div>
-    <div class="m-btn" id="btnRight">→</div>
-    <div class="m-btn" id="btnSoftDrop">SD</div>
-  </div>
-
-  <!-- テンプレ作成・保存エリア -->
-  <div class="template-editor">
-    <h3>テンプレ作成（文字入力）</h3>
-    <div class="hint">
-      下の段から上に向かって書きます。<br>
-      各行は10文字。. = 空、I J L O S T Z = そのミノ<br>
-      例：<br>
-      JJJ.......<br>
-      .J........
+  <!-- 編集画面 -->
+  <div id="editorView" class="view-section hidden">
+    <div class="editor-container">
+      <h2>
+        <span>ステップ対応 テンプレ作成</span>
+        <button id="closeEditorBtn">✕ ゲームに戻る</button>
+      </h2>
+      <div class="hint">
+        ・下から上に向かって記述（1行10文字）<br>
+        ・. = 空白 / I J L O S T Z = ミノ / X = 任意ブロック<br>
+        ・ステップ区切りは ---
+      </div>
+      <input type="text" id="templateName" placeholder="テンプレ名">
+      <textarea id="templateText" placeholder="L........O&#10;L..IIII..O&#10;---&#10;L........O"></textarea>
+      <div class="row">
+        <button id="saveTemplateBtn" style="background:#2a5a2a;">保存する</button>
+      </div>
+      <div class="saved-list">
+        <strong>作成したテンプレ一覧</strong>
+        <div id="savedList" style="margin-top:6px;"></div>
+      </div>
     </div>
-    <textarea id="templateText" placeholder="JJJ.......
-.J........
-.........."></textarea>
-    <div class="row">
-      <input type="text" id="templateName" placeholder="テンプレ名（例: 開幕パフェ）">
-      <button id="saveTemplateBtn">保存</button>
-    </div>
-    <div class="saved-list" id="savedList"></div>
   </div>
 
 <script>
-// ==========================================
-// 定数
-// ==========================================
-const COLS = 10;
-const ROWS = 20;
-const BLOCK_SIZE = 20;
-
+const COLS = 10, ROWS = 20, BLOCK_SIZE = 20;
 const COLORS = {
-  I: '#00f0f0', J: '#0000f0', L: '#f0a000',
-  O: '#f0f000', S: '#00f000', T: '#a000f0', Z: '#f00000'
+  I:'#00f0f0', J:'#0000f0', L:'#f0a000', O:'#f0f000',
+  S:'#00f000', T:'#a000f0', Z:'#f00000', X:'#888888'
 };
-
 const SHAPES = {
-  I: [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],
-  J: [[1,0,0],[1,1,1],[0,0,0]],
-  L: [[0,0,1],[1,1,1],[0,0,0]],
-  O: [[1,1],[1,1]],
-  S: [[0,1,1],[1,1,0],[0,0,0]],
-  T: [[0,1,0],[1,1,1],[0,0,0]],
-  Z: [[1,1,0],[0,1,1],[0,0,0]]
+  I:[[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],
+  J:[[1,0,0],[1,1,1],[0,0,0]],
+  L:[[0,0,1],[1,1,1],[0,0,0]],
+  O:[[1,1],[1,1]],
+  S:[[0,1,1],[1,1,0],[0,0,0]],
+  T:[[0,1,0],[1,1,1],[0,0,0]],
+  Z:[[1,1,0],[0,1,1],[0,0,0]]
 };
-
 const KICK_TABLE_JLSTZ = {
-  '0-1': [[0,0], [-1,0], [-1,1], [0,-2], [-1,-2]],
-  '1-0': [[0,0], [1,0], [1,-1], [0,2], [1,2]],
-  '1-2': [[0,0], [1,0], [1,-1], [0,2], [1,2]],
-  '2-1': [[0,0], [-1,0], [-1,1], [0,-2], [-1,-2]],
-  '2-3': [[0,0], [1,0], [1,1], [0,-2], [1,-2]],
-  '3-2': [[0,0], [-1,0], [-1,-1], [0,2], [-1,2]],
-  '3-0': [[0,0], [-1,0], [-1,-1], [0,2], [-1,2]],
-  '0-3': [[0,0], [1,0], [1,1], [0,-2], [1,-2]]
+  '0-1':[[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]],
+  '1-0':[[0,0],[1,0],[1,-1],[0,2],[1,2]],
+  '1-2':[[0,0],[1,0],[1,-1],[0,2],[1,2]],
+  '2-1':[[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]],
+  '2-3':[[0,0],[1,0],[1,1],[0,-2],[1,-2]],
+  '3-2':[[0,0],[-1,0],[-1,-1],[0,2],[-1,2]],
+  '3-0':[[0,0],[-1,0],[-1,-1],[0,2],[-1,2]],
+  '0-3':[[0,0],[1,0],[1,1],[0,-2],[1,-2]]
 };
-
 const KICK_TABLE_I = {
-  '0-1': [[0,0], [-2,0], [1,0], [-2,-1], [1,2]],
-  '1-0': [[0,0], [2,0], [-1,0], [2,1], [-1,-2]],
-  '1-2': [[0,0], [-1,0], [2,0], [-1,2], [2,-1]],
-  '2-1': [[0,0], [1,0], [-2,0], [1,-2], [-2,1]],
-  '2-3': [[0,0], [2,0], [-1,0], [2,1], [-1,-2]],
-  '3-2': [[0,0], [-2,0], [1,0], [-2,-1], [1,2]],
-  '3-0': [[0,0], [1,0], [-2,0], [1,-2], [-2,1]],
-  '0-3': [[0,0], [-1,0], [2,0], [-1,2], [2,-1]]
+  '0-1':[[0,0],[-2,0],[1,0],[-2,-1],[1,2]],
+  '1-0':[[0,0],[2,0],[-1,0],[2,1],[-1,-2]],
+  '1-2':[[0,0],[-1,0],[2,0],[-1,2],[2,-1]],
+  '2-1':[[0,0],[1,0],[-2,0],[1,-2],[-2,1]],
+  '2-3':[[0,0],[2,0],[-1,0],[2,1],[-1,-2]],
+  '3-2':[[0,0],[-2,0],[1,0],[-2,-1],[1,2]],
+  '3-0':[[0,0],[1,0],[-2,0],[1,-2],[-2,1]],
+  '0-3':[[0,0],[-1,0],[2,0],[-1,2],[2,-1]]
 };
 
-// 初期組み込みテンプレ（色付き）
 const BUILTIN_TEMPLATES = {
-  none: [],
-  TSD_OPENING: [
-    {x:0,y:19,type:'J'},{x:1,y:19,type:'J'},{x:2,y:19,type:'J'},{x:2,y:18,type:'J'},
-    {x:7,y:19,type:'L'},{x:8,y:19,type:'L'},{x:9,y:19,type:'L'},{x:7,y:18,type:'L'},
-    {x:3,y:19,type:'O'},{x:4,y:19,type:'O'},{x:3,y:18,type:'O'},{x:4,y:18,type:'O'}
-  ],
-  TKI3: [
-    {x:0,y:19,type:'J'},{x:1,y:19,type:'J'},{x:2,y:19,type:'J'},{x:2,y:18,type:'J'},
-    {x:5,y:19,type:'L'},{x:6,y:19,type:'L'},{x:7,y:19,type:'L'},{x:8,y:19,type:'L'},{x:9,y:19,type:'L'},
-    {x:6,y:18,type:'L'},{x:7,y:18,type:'L'},{x:8,y:18,type:'L'},{x:9,y:18,type:'L'}
-  ]
+  none: { sequence: null, steps: [[]] },
+  TSD_OPENING: {
+    sequence: ['I','L','O','S','Z','J','T'],
+    steps: [
+      [
+        {x:0,y:19,type:'L'},{x:0,y:18,type:'L'},{x:0,y:17,type:'L'},{x:1,y:17,type:'L'},
+        {x:3,y:19,type:'I'},{x:4,y:19,type:'I'},{x:5,y:19,type:'I'},{x:6,y:19,type:'I'},
+        {x:3,y:18,type:'S'},{x:4,y:18,type:'S'},{x:2,y:18,type:'S'},{x:3,y:17,type:'S'},
+        {x:4,y:17,type:'Z'},{x:5,y:17,type:'Z'},{x:5,y:18,type:'Z'},{x:6,y:18,type:'Z'},
+        {x:6,y:17,type:'J'},{x:7,y:17,type:'J'},{x:8,y:17,type:'J'},{x:8,y:18,type:'J'},
+        {x:8,y:19,type:'O'},{x:9,y:19,type:'O'},{x:8,y:18,type:'O'},{x:9,y:18,type:'O'}
+      ],
+      [
+        {x:0,y:19,type:'L'},{x:0,y:18,type:'L'},{x:6,y:18,type:'J'},
+        {x:8,y:18,type:'O'},{x:9,y:18,type:'O'},{x:8,y:19,type:'O'},{x:9,y:19,type:'O'}
+      ]
+    ]
+  },
+  TKI3: {
+    sequence: ['J','L','I','O','S','Z','T'],
+    steps: [
+      [
+        {x:0,y:19,type:'J'},{x:0,y:18,type:'J'},{x:0,y:17,type:'J'},{x:1,y:17,type:'J'},
+        {x:2,y:19,type:'L'},{x:3,y:19,type:'L'},{x:4,y:19,type:'L'},{x:4,y:18,type:'L'},
+        {x:1,y:18,type:'I'},{x:2,y:18,type:'I'},{x:3,y:18,type:'I'},{x:4,y:18,type:'I'},
+        {x:7,y:19,type:'O'},{x:8,y:19,type:'O'},{x:7,y:18,type:'O'},{x:8,y:18,type:'O'},
+        {x:5,y:19,type:'S'},{x:6,y:19,type:'S'},{x:6,y:18,type:'S'},{x:7,y:18,type:'S'},
+        {x:8,y:17,type:'Z'},{x:9,y:17,type:'Z'},{x:7,y:17,type:'Z'},{x:8,y:18,type:'Z'}
+      ],
+      [
+        {x:0,y:19,type:'J'},{x:7,y:19,type:'O'},{x:8,y:19,type:'O'}
+      ]
+    ]
+  }
 };
 
-// ==========================================
-// 状態
-// ==========================================
-let board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
-let currentPiece = null;
-let holdPiece = null;
-let canHold = true;
-let nextQueue = [];
-let bag = [];
-let currentTemplate = 'none';
+let currentMode = 'game';
+let isPaused = false;
+let board = Array.from({length:ROWS},()=>Array(COLS).fill(null));
+let currentPiece = null, holdPiece = null, canHold = true;
+let nextQueue = [], bag = [];
+let currentTemplateKey = 'none', currentStepIndex = 0;
 let isMirrored = false;
-let lockTimer = null;
-let lockResetCount = 0;
-const MAX_LOCK_RESETS = 15;
-const LOCK_DELAY = 500;
+let lockTimer = null, lockResetCount = 0;
+const MAX_LOCK_RESETS = 15, LOCK_DELAY = 500;
+let bagMode = 'normal';      // 'normal' | 'fixed'
+let mirrorMode = 'manual';   // 'manual' | 'auto'
+let userTemplates = {};
+let toastTimer = null;
+let lastDropTime = Date.now();
+const DROP_INTERVAL = 1000;
 
 const canvas = document.getElementById('mainCanvas');
 const ctx = canvas.getContext('2d');
 const holdCtx = document.getElementById('holdCanvas').getContext('2d');
 const nextCtx = document.getElementById('nextCanvas').getContext('2d');
 
-// ユーザー保存テンプレ（localStorageから読み込み）
-let userTemplates = {};
+// ---------- ユーティリティ ----------
+function showToast(msg) {
+  const t = document.getElementById('toastMessage');
+  t.innerText = msg;
+  t.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+}
 
-// ==========================================
-// テンプレ関連
-// ==========================================
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('gameView').classList.toggle('hidden', mode !== 'game');
+  document.getElementById('editorView').classList.toggle('hidden', mode !== 'editor');
+  document.getElementById('settingsView').classList.toggle('hidden', mode !== 'settings');
+  if (mode === 'editor' || mode === 'settings') togglePause(true);
+}
+
+let pauseStartTime = 0; // 一時停止を開始した時刻を記録する変数
+
+function togglePause(force) {
+  if (currentMode !== 'game' && force !== true) return;
+  isPaused = (typeof force === 'boolean') ? force : !isPaused;
+  const btn = document.getElementById('pauseBtn');
+  const ov = document.getElementById('pauseOverlay');
+  
+  if (isPaused) {
+    btn.innerText = '▶ 再開'; btn.classList.add('active');
+    ov.classList.remove('hidden');
+    clearTimeout(lockTimer); lockTimer = null;
+    pauseStartTime = Date.now(); // ★ 一時停止を開始した時刻を記録
+  } else {
+    btn.innerText = '⏸ 一時停止'; btn.classList.remove('active');
+    ov.classList.add('hidden');
+    
+    // ★ ポーズしていた時間分だけ lastDropTime を加算してずらす
+    // （これにより、ポーズ前に経過していたカウント分がそのまま再開後に維持される）
+    if (pauseStartTime > 0) {
+      lastDropTime += (Date.now() - pauseStartTime);
+      pauseStartTime = 0;
+    }
+  }
+}
+
+// ---------- テンプレ管理 ----------
 function loadUserTemplates() {
   try {
-    const raw = localStorage.getItem('tetrisUserTemplates');
-    userTemplates = raw ? JSON.parse(raw) : {};
-  } catch (e) {
-    userTemplates = {};
-  }
+    userTemplates = JSON.parse(localStorage.getItem('tetrisUserTemplatesFinal') || '{}');
+  } catch { userTemplates = {}; }
   refreshTemplateSelect();
   renderSavedList();
 }
-
 function saveUserTemplates() {
-  localStorage.setItem('tetrisUserTemplates', JSON.stringify(userTemplates));
+  localStorage.setItem('tetrisUserTemplatesFinal', JSON.stringify(userTemplates));
   refreshTemplateSelect();
   renderSavedList();
 }
-
 function refreshTemplateSelect() {
-  const select = document.getElementById('templateSelect');
-  const current = select.value;
-
-  // 組み込み以外を一旦クリア
-  while (select.options.length > 3) {
-    select.remove(3);
-  }
-
-  // ユーザーテンプレを追加
+  const sel = document.getElementById('templateSelect');
+  const cur = sel.value;
+  while (sel.options.length > 3) sel.remove(3);
   Object.keys(userTemplates).forEach(name => {
-    const opt = document.createElement('option');
-    opt.value = 'user:' + name;
-    opt.textContent = name + ' (保存)';
-    select.appendChild(opt);
+    const o = document.createElement('option');
+    o.value = 'user:' + name;
+    o.textContent = name + ' (自作)';
+    sel.appendChild(o);
   });
-
-  // 以前の選択を可能な限り復元
-  if ([...select.options].some(o => o.value === current)) {
-    select.value = current;
-  }
+  if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
 }
-
 function renderSavedList() {
   const list = document.getElementById('savedList');
   list.innerHTML = '';
   const names = Object.keys(userTemplates);
-  if (names.length === 0) {
-    list.innerHTML = '<div style="color:#666;font-size:0.8rem;">保存されたテンプレはありません</div>';
+  if (!names.length) {
+    list.innerHTML = '<div style="color:#666;">保存されたテンプレはありません</div>';
     return;
   }
   names.forEach(name => {
     const div = document.createElement('div');
     div.className = 'saved-item';
     div.innerHTML = `<span>${name}</span>`;
-    const delBtn = document.createElement('button');
-    delBtn.textContent = '削除';
-    delBtn.onclick = () => {
+    const btn = document.createElement('button');
+    btn.className = 'btn-del'; btn.textContent = '削除';
+    btn.onclick = () => {
       if (confirm(`「${name}」を削除しますか？`)) {
         delete userTemplates[name];
         saveUserTemplates();
-        if (currentTemplate === 'user:' + name) {
-          currentTemplate = 'none';
+        if (currentTemplateKey === 'user:' + name) {
+          currentTemplateKey = 'none';
           document.getElementById('templateSelect').value = 'none';
         }
       }
     };
-    div.appendChild(delBtn);
+    div.appendChild(btn);
     list.appendChild(div);
   });
 }
 
-// テキスト → ブロック配列に変換
-function parseTemplateText(text) {
-  const lines = text.trim().split('\n').map(l => l.trim()).filter(l => l.length > 0);
-  if (lines.length === 0) return [];
-
-  const blocks = [];
-  // 下の行が y=19 になるように逆順で処理
-  for (let i = 0; i < lines.length; i++) {
-    const line = lines[lines.length - 1 - i]; // 下から
-    const y = 19 - i;
-    if (y < 0) break;
-    for (let x = 0; x < Math.min(10, line.length); x++) {
-      const ch = line[x].toUpperCase();
-      if ('IJLOSTZ'.includes(ch)) {
-        blocks.push({ x, y, type: ch });
+function parseMultiStepTemplateText(text) {
+  const parts = text.split(/^---$/m);
+  const steps = [];
+  parts.forEach(p => {
+    const lines = p.trim().split('\n').map(l => l.trim()).filter(Boolean);
+    if (!lines.length) return;
+    const blocks = [];
+    for (let i = 0; i < lines.length; i++) {
+      const line = lines[lines.length - 1 - i];
+      const y = 19 - i;
+      if (y < 0) break;
+      for (let x = 0; x < Math.min(10, line.length); x++) {
+        const ch = line[x].toUpperCase();
+        if ('IJLOSTZX'.includes(ch)) blocks.push({x, y, type: ch});
       }
     }
-  }
-  return blocks;
+    if (blocks.length) steps.push(blocks);
+  });
+  return steps;
 }
 
-function getCurrentTemplateBlocks() {
-  if (currentTemplate.startsWith('user:')) {
-    const name = currentTemplate.slice(5);
-    return userTemplates[name] || [];
+function getTemplateData() {
+  if (currentTemplateKey.startsWith('user:')) {
+    const name = currentTemplateKey.slice(5);
+    return { sequence: null, steps: userTemplates[name] || [[]] };
   }
-  return BUILTIN_TEMPLATES[currentTemplate] || [];
+  return BUILTIN_TEMPLATES[currentTemplateKey] || { sequence: null, steps: [[]] };
 }
 
-// ==========================================
-// ゲームロジック（前回と同じ＋小さな修正）
-// ==========================================
+function updateStepDisplay() {
+  const data = getTemplateData();
+  const el = document.getElementById('stepDisplay');
+  if (currentTemplateKey === 'none') el.innerText = 'フリー練習モード';
+  else el.innerText = `STEP ${currentStepIndex + 1} / ${data.steps.length}`;
+}
+
+// ---------- 下段ミノ取得 & 自動反転判定 ----------
+function getBottomPieces(stepBlocks) {
+  const set = new Set();
+  stepBlocks.forEach(b => { if (b.y === 19) set.add(b.type); });
+  return [...set];
+}
+
+function autoMirrorCheck() {
+  if (mirrorMode !== 'auto' || currentTemplateKey === 'none') return;
+  const data = getTemplateData();
+  const step = data.steps[currentStepIndex] || [];
+  const bottom = getBottomPieces(step);
+  if (!bottom.length) return;
+
+  // NEXT先頭3個 + HOLD を見る
+  const upcoming = [];
+  if (holdPiece) upcoming.push(holdPiece);
+  for (let i = 0; i < Math.min(3, nextQueue.length); i++) upcoming.push(nextQueue[i]);
+  if (currentPiece) upcoming.unshift(currentPiece.type);
+
+  const hasBottom = bottom.some(p => upcoming.includes(p));
+  if (!hasBottom && !isMirrored) {
+    isMirrored = true;
+    document.getElementById('mirrorBtn').innerText = '反転: ON';
+    showToast('自動反転ON');
+  } else if (hasBottom && isMirrored) {
+    // 既に反転していて下段ミノが来るなら戻してもよいが、今回は維持
+  }
+}
+
+// ---------- ゲームロジック ----------
 function generateBag() {
-  const pieces = ['I', 'J', 'L', 'O', 'S', 'T', 'Z'];
-  for (let i = pieces.length - 1; i > 0; i--) {
+  const p = ['I','J','L','O','S','T','Z'];
+  for (let i = p.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
-    [pieces[i], pieces[j]] = [pieces[j], pieces[i]];
+    [p[i], p[j]] = [p[j], p[i]];
   }
-  return pieces;
+  return p;
 }
-
 function refillBagIfNeeded() {
   if (bag.length === 0) bag = generateBag();
 }
-
 function getNextPiece() {
   while (nextQueue.length < 5) {
     refillBagIfNeeded();
@@ -431,7 +476,7 @@ function getNextPiece() {
 class Piece {
   constructor(type) {
     this.type = type;
-    this.shape = SHAPES[type].map(row => [...row]);
+    this.shape = SHAPES[type].map(r => [...r]);
     this.color = COLORS[type];
     this.rotation = 0;
     this.x = Math.floor((COLS - this.shape[0].length) / 2);
@@ -444,57 +489,48 @@ function spawnPiece() {
   currentPiece = new Piece(type);
   canHold = true;
   lockResetCount = 0;
-  clearTimeout(lockTimer);
-  lockTimer = null;
-  if (checkCollision(currentPiece.x, currentPiece.y, currentPiece.shape)) {
-    resetGame();
-  }
+  clearTimeout(lockTimer); lockTimer = null;
+  autoMirrorCheck();
+  if (checkCollision(currentPiece.x, currentPiece.y, currentPiece.shape)) resetGame();
 }
 
 function checkCollision(px, py, shape) {
   for (let r = 0; r < shape.length; r++) {
     for (let c = 0; c < shape[r].length; c++) {
       if (shape[r][c]) {
-        const newX = px + c;
-        const newY = py + r;
-        if (newX < 0 || newX >= COLS || newY >= ROWS) return true;
-        if (newY >= 0 && board[newY][newX]) return true;
+        const nx = px + c, ny = py + r;
+        if (nx < 0 || nx >= COLS || ny >= ROWS) return true;
+        if (ny >= 0 && board[ny][nx]) return true;
       }
     }
   }
   return false;
 }
 
-function rotateMatrix(matrix, dir) {
-  const N = matrix.length;
-  const result = Array.from({ length: N }, () => Array(N).fill(0));
-  for (let r = 0; r < N; r++) {
-    for (let c = 0; c < N; c++) {
-      if (dir === 1) {
-        result[c][N - 1 - r] = matrix[r][c];
-      } else {
-        result[N - 1 - c][r] = matrix[r][c];
-      }
-    }
+function rotateMatrix(m, dir) {
+  const N = m.length;
+  const res = Array.from({length:N},()=>Array(N).fill(0));
+  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
+    if (dir === 1) res[c][N-1-r] = m[r][c];
+    else res[N-1-c][r] = m[r][c];
   }
-  return result;
+  return res;
 }
 
 function rotatePiece(dir) {
-  if (!currentPiece || currentPiece.type === 'O') return;
-  const oldRotation = currentPiece.rotation;
-  const newRotation = (oldRotation + dir + 4) % 4;
+  if (!currentPiece || currentPiece.type === 'O' || isPaused) return;
+  const oldR = currentPiece.rotation;
+  const newR = (oldR + dir + 4) % 4;
   const newShape = rotateMatrix(currentPiece.shape, dir);
-  const key = `${oldRotation}-${newRotation}`;
-  const kickTable = (currentPiece.type === 'I') ? KICK_TABLE_I[key] : KICK_TABLE_JLSTZ[key];
-  if (!kickTable) return;
-  for (let i = 0; i < kickTable.length; i++) {
-    const [dx, dy] = kickTable[i];
+  const key = `${oldR}-${newR}`;
+  const table = currentPiece.type === 'I' ? KICK_TABLE_I[key] : KICK_TABLE_JLSTZ[key];
+  if (!table) return;
+  for (const [dx, dy] of table) {
     if (!checkCollision(currentPiece.x + dx, currentPiece.y - dy, newShape)) {
       currentPiece.x += dx;
       currentPiece.y -= dy;
       currentPiece.shape = newShape;
-      currentPiece.rotation = newRotation;
+      currentPiece.rotation = newR;
       handleLockReset();
       break;
     }
@@ -502,7 +538,7 @@ function rotatePiece(dir) {
 }
 
 function move(dx, dy) {
-  if (!currentPiece) return false;
+  if (!currentPiece || isPaused) return false;
   if (!checkCollision(currentPiece.x + dx, currentPiece.y + dy, currentPiece.shape)) {
     currentPiece.x += dx;
     currentPiece.y += dy;
@@ -513,182 +549,186 @@ function move(dx, dy) {
 }
 
 function hardDrop() {
-  if (!currentPiece) return;
+  if (!currentPiece || isPaused) return;
   while (move(0, 1)) {}
   lockPiece();
 }
 
 function doHold() {
-  if (!canHold || !currentPiece) return;
-  clearTimeout(lockTimer);
-  lockTimer = null;
-  const temp = currentPiece.type;
-  if (holdPiece === null) {
-    holdPiece = temp;
+  if (!canHold || !currentPiece || isPaused) return;
+  clearTimeout(lockTimer); lockTimer = null;
+  const t = currentPiece.type;
+  if (!holdPiece) {
+    holdPiece = t;
     spawnPiece();
   } else {
     currentPiece = new Piece(holdPiece);
-    holdPiece = temp;
+    holdPiece = t;
   }
   canHold = false;
 }
 
 function handleLockReset() {
-  const isGrounded = checkCollision(currentPiece.x, currentPiece.y + 1, currentPiece.shape);
-  if (isGrounded) {
+  if (isPaused) return;
+  const grounded = checkCollision(currentPiece.x, currentPiece.y + 1, currentPiece.shape);
+  if (grounded) {
     if (lockResetCount < MAX_LOCK_RESETS) {
       lockResetCount++;
       clearTimeout(lockTimer);
       lockTimer = setTimeout(lockPiece, LOCK_DELAY);
     }
   } else {
-    clearTimeout(lockTimer);
-    lockTimer = null;
+    clearTimeout(lockTimer); lockTimer = null;
+  }
+}
+
+function checkStepCompletion() {
+  if (currentTemplateKey === 'none') return;
+  const data = getTemplateData();
+  const target = data.steps[currentStepIndex] || [];
+  if (!target.length) return;
+
+  let count = 0;
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (board[r][c]) count++;
+  if (count !== target.length) return;
+
+  let match = true;
+  for (const b of target) {
+    const tx = isMirrored ? (COLS - 1) - b.x : b.x;
+    if (!board[b.y][tx]) { match = false; break; }
+  }
+  if (!match) return;
+
+  const el = document.getElementById('stepDisplay');
+  el.classList.add('cleared');
+  setTimeout(() => el.classList.remove('cleared'), 800);
+
+  if (currentStepIndex < data.steps.length - 1) {
+    currentStepIndex++;
+    updateStepDisplay();
+    showToast(`🎉 STEP ${currentStepIndex} CLEAR!`);
+  } else {
+    showToast('✨ ALL STEPS CLEARED! ✨');
+    setTimeout(resetGame, 1200);
   }
 }
 
 function lockPiece() {
-  clearTimeout(lockTimer);
-  lockTimer = null;
+  if (isPaused) return;
+  clearTimeout(lockTimer); lockTimer = null;
   for (let r = 0; r < currentPiece.shape.length; r++) {
     for (let c = 0; c < currentPiece.shape[r].length; c++) {
       if (currentPiece.shape[r][c]) {
-        const ry = currentPiece.y + r;
-        const rx = currentPiece.x + c;
-        if (ry >= 0 && ry < ROWS) {
-          board[ry][rx] = currentPiece.color;
-        }
+        const ry = currentPiece.y + r, rx = currentPiece.x + c;
+        if (ry >= 0 && ry < ROWS) board[ry][rx] = currentPiece.color;
       }
     }
   }
   for (let r = ROWS - 1; r >= 0; r--) {
-    if (board[r].every(cell => cell !== null)) {
+    if (board[r].every(c => c !== null)) {
       board.splice(r, 1);
       board.unshift(Array(COLS).fill(null));
       r++;
     }
   }
+  checkStepCompletion();
   spawnPiece();
 }
 
 function getGhostY() {
   if (!currentPiece) return 0;
-  let ghostY = currentPiece.y;
-  while (!checkCollision(currentPiece.x, ghostY + 1, currentPiece.shape)) {
-    ghostY++;
-  }
-  return ghostY;
+  let gy = currentPiece.y;
+  while (!checkCollision(currentPiece.x, gy + 1, currentPiece.shape)) gy++;
+  return gy;
 }
 
-// ==========================================
-// 描画
-// ==========================================
-function drawBlock(cCtx, x, y, color, alpha = 1.0) {
-  cCtx.save();
-  cCtx.globalAlpha = alpha;
-  cCtx.fillStyle = color;
-  cCtx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE - 1, BLOCK_SIZE - 1);
-  cCtx.restore();
+// ---------- 描画 ----------
+function drawBlock(c, x, y, color, a = 1) {
+  c.save(); c.globalAlpha = a; c.fillStyle = color;
+  c.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE - 1, BLOCK_SIZE - 1);
+  c.restore();
 }
 
 function draw() {
   ctx.clearRect(0, 0, canvas.width, canvas.height);
-
-  // テンプレートガイド（色付き半透明）
-  const templateBlocks = getCurrentTemplateBlocks();
-  templateBlocks.forEach(b => {
-    let targetX = isMirrored ? (COLS - 1) - b.x : b.x;
-    const color = COLORS[b.type] || '#ffffff';
-    drawBlock(ctx, targetX, b.y, color, 0.35);
+  const data = getTemplateData();
+  const step = data.steps[currentStepIndex] || [];
+  step.forEach(b => {
+    const tx = isMirrored ? (COLS - 1) - b.x : b.x;
+    drawBlock(ctx, tx, b.y, COLORS[b.type] || '#fff', 0.35);
   });
-
-  // 固定ブロック
-  for (let r = 0; r < ROWS; r++) {
-    for (let c = 0; c < COLS; c++) {
-      if (board[r][c]) {
-        drawBlock(ctx, c, r, board[r][c]);
-      }
-    }
+  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
+    if (board[r][c]) drawBlock(ctx, c, r, board[r][c]);
   }
-
-  // ゴースト + アクティブ
   if (currentPiece) {
-    const ghostY = getGhostY();
+    const gy = getGhostY();
     for (let r = 0; r < currentPiece.shape.length; r++) {
       for (let c = 0; c < currentPiece.shape[r].length; c++) {
         if (currentPiece.shape[r][c]) {
-          drawBlock(ctx, currentPiece.x + c, ghostY + r, currentPiece.color, 0.25);
+          drawBlock(ctx, currentPiece.x + c, gy + r, currentPiece.color, 0.25);
           drawBlock(ctx, currentPiece.x + c, currentPiece.y + r, currentPiece.color);
         }
       }
     }
   }
-
-  drawMiniPreview(holdCtx, holdPiece);
-  drawNextPreview();
+  drawMini(holdCtx, holdPiece);
+  drawNext();
 }
 
-function drawMiniPreview(cCtx, type) {
-  cCtx.clearRect(0, 0, 60, 60);
+function drawMini(c, type) {
+  c.clearRect(0, 0, 58, 58);
   if (!type) return;
-  const shape = SHAPES[type];
-  const color = COLORS[type];
-  for (let r = 0; r < shape.length; r++) {
-    for (let c = 0; c < shape[r].length; c++) {
-      if (shape[r][c]) {
-        cCtx.fillStyle = color;
-        cCtx.fillRect(c * 12 + 10, r * 12 + 10, 11, 11);
-      }
-    }
+  const s = SHAPES[type], col = COLORS[type];
+  const ox = (58 - s[0].length * 11) / 2, oy = (58 - s.length * 11) / 2;
+  for (let r = 0; r < s.length; r++) for (let cc = 0; cc < s[r].length; cc++) {
+    if (s[r][cc]) { c.fillStyle = col; c.fillRect(ox + cc * 11, oy + r * 11, 10, 10); }
   }
 }
 
-function drawNextPreview() {
-  nextCtx.clearRect(0, 0, 60, 180);
+function drawNext() {
+  nextCtx.clearRect(0, 0, 58, 180);
   for (let i = 0; i < Math.min(3, nextQueue.length); i++) {
-    const type = nextQueue[i];
-    const shape = SHAPES[type];
-    const color = COLORS[type];
-    for (let r = 0; r < shape.length; r++) {
-      for (let c = 0; c < shape[r].length; c++) {
-        if (shape[r][c]) {
-          nextCtx.fillStyle = color;
-          nextCtx.fillRect(c * 10 + 10, i * 50 + r * 10 + 10, 9, 9);
-        }
+    const t = nextQueue[i], s = SHAPES[t], col = COLORS[t];
+    const ox = (58 - s[0].length * 10) / 2;
+    for (let r = 0; r < s.length; r++) for (let c = 0; c < s[r].length; c++) {
+      if (s[r][c]) {
+        nextCtx.fillStyle = col;
+        nextCtx.fillRect(ox + c * 10, i * 55 + r * 10 + 10, 9, 9);
       }
     }
   }
 }
 
-// ==========================================
-// ゲームループ & 入力
-// ==========================================
-let lastDropTime = Date.now();
-const DROP_INTERVAL = 1000;
-
+// ---------- ループ & リセット ----------
 function gameLoop() {
-  const now = Date.now();
-  if (now - lastDropTime > DROP_INTERVAL) {
-    if (currentPiece) {
-      if (!move(0, 1)) {
-        if (!lockTimer) {
-          lockTimer = setTimeout(lockPiece, LOCK_DELAY);
-        }
+  if (currentMode === 'game') {
+    const now = Date.now();
+    if (!isPaused && now - lastDropTime > DROP_INTERVAL) {
+      if (currentPiece && !move(0, 1)) {
+        if (!lockTimer) lockTimer = setTimeout(lockPiece, LOCK_DELAY);
       }
+      lastDropTime = now;
     }
-    lastDropTime = now;
+    draw();
   }
-  draw();
   requestAnimationFrame(gameLoop);
 }
 
 function resetGame() {
-  board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
-  holdPiece = null;
-  canHold = true;
-  bag = [];
-  nextQueue = [];
-  // NEXTを先に埋める
+  board = Array.from({length:ROWS},()=>Array(COLS).fill(null));
+  holdPiece = null; canHold = true;
+  nextQueue = []; currentStepIndex = 0;
+  isMirrored = false;
+  document.getElementById('mirrorBtn').innerText = '反転: OFF';
+  togglePause(false);
+  updateStepDisplay();
+
+  const data = getTemplateData();
+  if (bagMode === 'fixed' && data.sequence) {
+    bag = [...data.sequence];
+  } else {
+    bag = [];
+  }
   while (nextQueue.length < 5) {
     refillBagIfNeeded();
     nextQueue.push(bag.shift());
@@ -696,70 +736,113 @@ function resetGame() {
   spawnPiece();
 }
 
-// キーボード
-document.addEventListener('keydown', (e) => {
+// ---------- 入力 ----------
+document.addEventListener('keydown', e => {
+  if (currentMode !== 'game') return;
+  if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') { togglePause(); return; }
+  if (isPaused) return;
   if (e.repeat && (e.key === 'ArrowUp' || e.key === ' ')) return;
   switch (e.key) {
-    case 'ArrowLeft': move(-1, 0); break;
-    case 'ArrowRight': move(1, 0); break;
-    case 'ArrowDown': move(0, 1); break;
-    case 'ArrowUp':
-    case ' ': hardDrop(); break;
+    case 'ArrowLeft': move(-1,0); break;
+    case 'ArrowRight': move(1,0); break;
+    case 'ArrowDown': move(0,1); break;
+    case 'ArrowUp': case ' ': hardDrop(); break;
     case 'x': case 'X': rotatePiece(1); break;
     case 'z': case 'Z': rotatePiece(-1); break;
     case 'c': case 'C': case 'Shift': doHold(); break;
   }
 });
 
-// UI
-document.getElementById('templateSelect').addEventListener('change', (e) => {
-  currentTemplate = e.target.value;
-});
-
-document.getElementById('mirrorBtn').addEventListener('click', (e) => {
+document.getElementById('pauseBtn').onclick = () => togglePause();
+document.getElementById('btnPauseMobile').onclick = () => togglePause();
+document.getElementById('templateSelect').onchange = e => {
+  currentTemplateKey = e.target.value;
+  resetGame();
+};
+document.getElementById('mirrorBtn').onclick = e => {
+  if (mirrorMode === 'auto') return; // 自動時は手動無効
   isMirrored = !isMirrored;
   e.target.innerText = `反転: ${isMirrored ? 'ON' : 'OFF'}`;
-});
+};
+document.getElementById('resetBtn').onclick = resetGame;
+document.getElementById('openEditorBtn').onclick = () => setMode('editor');
+document.getElementById('closeEditorBtn').onclick = () => { setMode('game'); togglePause(false); };
+document.getElementById('openSettingsBtn').onclick = () => setMode('settings');
+document.getElementById('closeSettingsBtn').onclick = () => { setMode('game'); togglePause(false); };
 
-document.getElementById('resetBtn').addEventListener('click', resetGame);
+document.getElementById('bagModeSelect').onchange = e => {
+  bagMode = e.target.value;
+  resetGame();
+};
+document.getElementById('mirrorModeSelect').onchange = e => {
+  mirrorMode = e.target.value;
+  if (mirrorMode === 'manual') {
+    document.getElementById('mirrorBtn').style.opacity = '1';
+  } else {
+    document.getElementById('mirrorBtn').style.opacity = '0.5';
+  }
+};
 
-document.getElementById('saveTemplateBtn').addEventListener('click', () => {
+// モバイル長押し
+const activeIntervals = {};
+function bindRepeat(id, fn) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const start = e => {
+    e.preventDefault();
+    if (isPaused) return;
+    fn();
+    clearTimeout(activeIntervals[id]);
+    activeIntervals[id] = setTimeout(() => {
+      activeIntervals[id] = setInterval(() => { if (!isPaused) fn(); }, 60);
+    }, 170);
+  };
+  const stop = e => {
+    if (e?.cancelable) e.preventDefault();
+    clearTimeout(activeIntervals[id]);
+    clearInterval(activeIntervals[id]);
+    delete activeIntervals[id];
+  };
+  el.addEventListener('touchstart', start, {passive:false});
+  el.addEventListener('touchend', stop);
+  el.addEventListener('touchcancel', stop);
+  el.addEventListener('mousedown', start);
+  el.addEventListener('mouseup', stop);
+  el.addEventListener('mouseleave', stop);
+}
+function bindSingle(id, fn) {
+  const el = document.getElementById(id);
+  if (!el) return;
+  const f = e => { e.preventDefault(); if (!isPaused) fn(); };
+  el.addEventListener('touchstart', f, {passive:false});
+  el.addEventListener('mousedown', f);
+}
+bindRepeat('btnLeft', () => move(-1,0));
+bindRepeat('btnRight', () => move(1,0));
+bindRepeat('btnDown', () => move(0,1));
+bindSingle('btnHardDrop', hardDrop);
+bindSingle('btnRotCW', () => rotatePiece(1));
+bindSingle('btnRotCCW', () => rotatePiece(-1));
+bindSingle('btnHold', doHold);
+
+// 保存
+document.getElementById('saveTemplateBtn').onclick = () => {
   const name = document.getElementById('templateName').value.trim();
   const text = document.getElementById('templateText').value;
-  if (!name) {
-    alert('テンプレ名を入力してください');
-    return;
-  }
-  if (BUILTIN_TEMPLATES[name] || name === 'none') {
-    alert('その名前は組み込みテンプレで使われています');
-    return;
-  }
-  const blocks = parseTemplateText(text);
-  if (blocks.length === 0) {
-    alert('有効なブロックがありません');
-    return;
-  }
-  userTemplates[name] = blocks;
+  if (!name) { showToast('名前を入力してください'); return; }
+  if (BUILTIN_TEMPLATES[name] || name === 'none') { showToast('予約名です'); return; }
+  const steps = parseMultiStepTemplateText(text);
+  if (!steps.length) { showToast('有効なブロックがありません'); return; }
+  userTemplates[name] = steps;
   saveUserTemplates();
   document.getElementById('templateName').value = '';
   document.getElementById('templateText').value = '';
-  alert(`「${name}」を保存しました`);
-});
-
-// モバイル
-const bindBtn = (id, action) => {
-  const el = document.getElementById(id);
-  el.addEventListener('touchstart', (e) => { e.preventDefault(); action(); });
-  el.addEventListener('mousedown', (e) => { e.preventDefault(); action(); });
+  showToast(`「${name}」を保存しました`);
+  setMode('game');
+  document.getElementById('templateSelect').value = 'user:' + name;
+  currentTemplateKey = 'user:' + name;
+  resetGame();
 };
-bindBtn('btnLeft', () => move(-1, 0));
-bindBtn('btnRight', () => move(1, 0));
-bindBtn('btnDown', () => move(0, 1));
-bindBtn('btnSoftDrop', () => move(0, 2));
-bindBtn('btnHardDrop', () => hardDrop());
-bindBtn('btnRotCW', () => rotatePiece(1));
-bindBtn('btnRotCCW', () => rotatePiece(-1));
-bindBtn('btnHold', () => doHold());
 
 // 初期化
 loadUserTemplates();
