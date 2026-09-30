@@ -1,0 +1,770 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+  <title>Tetris Template Practice App</title>
+  <style>
+    * {
+      box-sizing: border-box;
+      user-select: none;
+      -webkit-user-select: none;
+    }
+    body {
+      background-color: #121214;
+      color: #ffffff;
+      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+      margin: 0;
+      padding: 10px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: flex-start;
+      min-height: 100vh;
+    }
+    h1 {
+      font-size: 1.2rem;
+      margin: 0 0 8px 0;
+      text-align: center;
+    }
+    .controls-panel {
+      margin-bottom: 8px;
+      display: flex;
+      gap: 8px;
+      flex-wrap: wrap;
+      justify-content: center;
+      align-items: center;
+    }
+    select, button, input, textarea {
+      background: #2a2a30;
+      color: #fff;
+      border: 1px solid #444;
+      padding: 6px 10px;
+      border-radius: 4px;
+      font-size: 0.85rem;
+    }
+    button:active {
+      background: #444;
+    }
+    .game-container {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+      align-items: flex-start;
+    }
+    .side-panel {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      width: 70px;
+    }
+    .preview-box {
+      background: #1e1e24;
+      border: 2px solid #333;
+      border-radius: 4px;
+      padding: 5px;
+      text-align: center;
+    }
+    .preview-title {
+      font-size: 0.75rem;
+      color: #aaa;
+      margin-bottom: 4px;
+    }
+    canvas {
+      background: #000;
+      border: 2px solid #333;
+      border-radius: 4px;
+      display: block;
+    }
+    .mobile-controls {
+      display: grid;
+      grid-template-columns: repeat(4, 1fr);
+      gap: 6px;
+      margin-top: 12px;
+      width: 100%;
+      max-width: 340px;
+    }
+    .m-btn {
+      background: #2a2a35;
+      border: 1px solid #444;
+      color: white;
+      padding: 12px 0;
+      text-align: center;
+      border-radius: 6px;
+      font-size: 1rem;
+      font-weight: bold;
+      touch-action: manipulation;
+    }
+    .m-btn:active {
+      background: #555;
+    }
+    .span-2 { grid-column: span 2; }
+
+    /* テンプレ作成エリア */
+    .template-editor {
+      margin-top: 16px;
+      width: 100%;
+      max-width: 420px;
+      background: #1a1a20;
+      border: 1px solid #333;
+      border-radius: 8px;
+      padding: 12px;
+    }
+    .template-editor h3 {
+      margin: 0 0 8px 0;
+      font-size: 0.95rem;
+      color: #ccc;
+    }
+    .template-editor textarea {
+      width: 100%;
+      height: 120px;
+      font-family: monospace;
+      font-size: 0.8rem;
+      resize: vertical;
+      margin-bottom: 8px;
+    }
+    .template-editor .row {
+      display: flex;
+      gap: 8px;
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .template-editor input[type="text"] {
+      flex: 1;
+      min-width: 120px;
+    }
+    .hint {
+      font-size: 0.75rem;
+      color: #888;
+      margin-top: 4px;
+      line-height: 1.4;
+    }
+    .saved-list {
+      margin-top: 10px;
+      font-size: 0.8rem;
+    }
+    .saved-item {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 4px 0;
+      border-bottom: 1px solid #333;
+    }
+    .saved-item button {
+      padding: 2px 8px;
+      font-size: 0.75rem;
+      background: #4a2020;
+    }
+  </style>
+</head>
+<body>
+  <h1>テトリス テンプレート練習機</h1>
+
+  <div class="controls-panel">
+    <label>テンプレ:
+      <select id="templateSelect">
+        <option value="none">なし（フリー）</option>
+        <option value="TSD_OPENING">開幕TSD</option>
+        <option value="TKI3">TKI3</option>
+      </select>
+    </label>
+    <button id="mirrorBtn">反転: OFF</button>
+    <button id="resetBtn">リセット</button>
+  </div>
+
+  <div class="game-container">
+    <div class="side-panel">
+      <div class="preview-box">
+        <div class="preview-title">HOLD</div>
+        <canvas id="holdCanvas" width="60" height="60"></canvas>
+      </div>
+    </div>
+    <canvas id="mainCanvas" width="200" height="400"></canvas>
+    <div class="side-panel">
+      <div class="preview-box">
+        <div class="preview-title">NEXT</div>
+        <canvas id="nextCanvas" width="60" height="180"></canvas>
+      </div>
+    </div>
+  </div>
+
+  <div class="mobile-controls">
+    <div class="m-btn" id="btnHold">HOLD</div>
+    <div class="m-btn" id="btnRotCCW">↺ (Z)</div>
+    <div class="m-btn" id="btnRotCW">↻ (X)</div>
+    <div class="m-btn" id="btnHardDrop">DROP</div>
+    <div class="m-btn" id="btnLeft">←</div>
+    <div class="m-btn" id="btnDown">↓</div>
+    <div class="m-btn" id="btnRight">→</div>
+    <div class="m-btn" id="btnSoftDrop">SD</div>
+  </div>
+
+  <!-- テンプレ作成・保存エリア -->
+  <div class="template-editor">
+    <h3>テンプレ作成（文字入力）</h3>
+    <div class="hint">
+      下の段から上に向かって書きます。<br>
+      各行は10文字。. = 空、I J L O S T Z = そのミノ<br>
+      例：<br>
+      JJJ.......<br>
+      .J........
+    </div>
+    <textarea id="templateText" placeholder="JJJ.......
+.J........
+.........."></textarea>
+    <div class="row">
+      <input type="text" id="templateName" placeholder="テンプレ名（例: 開幕パフェ）">
+      <button id="saveTemplateBtn">保存</button>
+    </div>
+    <div class="saved-list" id="savedList"></div>
+  </div>
+
+<script>
+// ==========================================
+// 定数
+// ==========================================
+const COLS = 10;
+const ROWS = 20;
+const BLOCK_SIZE = 20;
+
+const COLORS = {
+  I: '#00f0f0', J: '#0000f0', L: '#f0a000',
+  O: '#f0f000', S: '#00f000', T: '#a000f0', Z: '#f00000'
+};
+
+const SHAPES = {
+  I: [[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],
+  J: [[1,0,0],[1,1,1],[0,0,0]],
+  L: [[0,0,1],[1,1,1],[0,0,0]],
+  O: [[1,1],[1,1]],
+  S: [[0,1,1],[1,1,0],[0,0,0]],
+  T: [[0,1,0],[1,1,1],[0,0,0]],
+  Z: [[1,1,0],[0,1,1],[0,0,0]]
+};
+
+const KICK_TABLE_JLSTZ = {
+  '0-1': [[0,0], [-1,0], [-1,1], [0,-2], [-1,-2]],
+  '1-0': [[0,0], [1,0], [1,-1], [0,2], [1,2]],
+  '1-2': [[0,0], [1,0], [1,-1], [0,2], [1,2]],
+  '2-1': [[0,0], [-1,0], [-1,1], [0,-2], [-1,-2]],
+  '2-3': [[0,0], [1,0], [1,1], [0,-2], [1,-2]],
+  '3-2': [[0,0], [-1,0], [-1,-1], [0,2], [-1,2]],
+  '3-0': [[0,0], [-1,0], [-1,-1], [0,2], [-1,2]],
+  '0-3': [[0,0], [1,0], [1,1], [0,-2], [1,-2]]
+};
+
+const KICK_TABLE_I = {
+  '0-1': [[0,0], [-2,0], [1,0], [-2,-1], [1,2]],
+  '1-0': [[0,0], [2,0], [-1,0], [2,1], [-1,-2]],
+  '1-2': [[0,0], [-1,0], [2,0], [-1,2], [2,-1]],
+  '2-1': [[0,0], [1,0], [-2,0], [1,-2], [-2,1]],
+  '2-3': [[0,0], [2,0], [-1,0], [2,1], [-1,-2]],
+  '3-2': [[0,0], [-2,0], [1,0], [-2,-1], [1,2]],
+  '3-0': [[0,0], [1,0], [-2,0], [1,-2], [-2,1]],
+  '0-3': [[0,0], [-1,0], [2,0], [-1,2], [2,-1]]
+};
+
+// 初期組み込みテンプレ（色付き）
+const BUILTIN_TEMPLATES = {
+  none: [],
+  TSD_OPENING: [
+    {x:0,y:19,type:'J'},{x:1,y:19,type:'J'},{x:2,y:19,type:'J'},{x:2,y:18,type:'J'},
+    {x:7,y:19,type:'L'},{x:8,y:19,type:'L'},{x:9,y:19,type:'L'},{x:7,y:18,type:'L'},
+    {x:3,y:19,type:'O'},{x:4,y:19,type:'O'},{x:3,y:18,type:'O'},{x:4,y:18,type:'O'}
+  ],
+  TKI3: [
+    {x:0,y:19,type:'J'},{x:1,y:19,type:'J'},{x:2,y:19,type:'J'},{x:2,y:18,type:'J'},
+    {x:5,y:19,type:'L'},{x:6,y:19,type:'L'},{x:7,y:19,type:'L'},{x:8,y:19,type:'L'},{x:9,y:19,type:'L'},
+    {x:6,y:18,type:'L'},{x:7,y:18,type:'L'},{x:8,y:18,type:'L'},{x:9,y:18,type:'L'}
+  ]
+};
+
+// ==========================================
+// 状態
+// ==========================================
+let board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+let currentPiece = null;
+let holdPiece = null;
+let canHold = true;
+let nextQueue = [];
+let bag = [];
+let currentTemplate = 'none';
+let isMirrored = false;
+let lockTimer = null;
+let lockResetCount = 0;
+const MAX_LOCK_RESETS = 15;
+const LOCK_DELAY = 500;
+
+const canvas = document.getElementById('mainCanvas');
+const ctx = canvas.getContext('2d');
+const holdCtx = document.getElementById('holdCanvas').getContext('2d');
+const nextCtx = document.getElementById('nextCanvas').getContext('2d');
+
+// ユーザー保存テンプレ（localStorageから読み込み）
+let userTemplates = {};
+
+// ==========================================
+// テンプレ関連
+// ==========================================
+function loadUserTemplates() {
+  try {
+    const raw = localStorage.getItem('tetrisUserTemplates');
+    userTemplates = raw ? JSON.parse(raw) : {};
+  } catch (e) {
+    userTemplates = {};
+  }
+  refreshTemplateSelect();
+  renderSavedList();
+}
+
+function saveUserTemplates() {
+  localStorage.setItem('tetrisUserTemplates', JSON.stringify(userTemplates));
+  refreshTemplateSelect();
+  renderSavedList();
+}
+
+function refreshTemplateSelect() {
+  const select = document.getElementById('templateSelect');
+  const current = select.value;
+
+  // 組み込み以外を一旦クリア
+  while (select.options.length > 3) {
+    select.remove(3);
+  }
+
+  // ユーザーテンプレを追加
+  Object.keys(userTemplates).forEach(name => {
+    const opt = document.createElement('option');
+    opt.value = 'user:' + name;
+    opt.textContent = name + ' (保存)';
+    select.appendChild(opt);
+  });
+
+  // 以前の選択を可能な限り復元
+  if ([...select.options].some(o => o.value === current)) {
+    select.value = current;
+  }
+}
+
+function renderSavedList() {
+  const list = document.getElementById('savedList');
+  list.innerHTML = '';
+  const names = Object.keys(userTemplates);
+  if (names.length === 0) {
+    list.innerHTML = '<div style="color:#666;font-size:0.8rem;">保存されたテンプレはありません</div>';
+    return;
+  }
+  names.forEach(name => {
+    const div = document.createElement('div');
+    div.className = 'saved-item';
+    div.innerHTML = `<span>${name}</span>`;
+    const delBtn = document.createElement('button');
+    delBtn.textContent = '削除';
+    delBtn.onclick = () => {
+      if (confirm(`「${name}」を削除しますか？`)) {
+        delete userTemplates[name];
+        saveUserTemplates();
+        if (currentTemplate === 'user:' + name) {
+          currentTemplate = 'none';
+          document.getElementById('templateSelect').value = 'none';
+        }
+      }
+    };
+    div.appendChild(delBtn);
+    list.appendChild(div);
+  });
+}
+
+// テキスト → ブロック配列に変換
+function parseTemplateText(text) {
+  const lines = text.trim().split('\n').map(l => l.trim()).filter(l => l.length > 0);
+  if (lines.length === 0) return [];
+
+  const blocks = [];
+  // 下の行が y=19 になるように逆順で処理
+  for (let i = 0; i < lines.length; i++) {
+    const line = lines[lines.length - 1 - i]; // 下から
+    const y = 19 - i;
+    if (y < 0) break;
+    for (let x = 0; x < Math.min(10, line.length); x++) {
+      const ch = line[x].toUpperCase();
+      if ('IJLOSTZ'.includes(ch)) {
+        blocks.push({ x, y, type: ch });
+      }
+    }
+  }
+  return blocks;
+}
+
+function getCurrentTemplateBlocks() {
+  if (currentTemplate.startsWith('user:')) {
+    const name = currentTemplate.slice(5);
+    return userTemplates[name] || [];
+  }
+  return BUILTIN_TEMPLATES[currentTemplate] || [];
+}
+
+// ==========================================
+// ゲームロジック（前回と同じ＋小さな修正）
+// ==========================================
+function generateBag() {
+  const pieces = ['I', 'J', 'L', 'O', 'S', 'T', 'Z'];
+  for (let i = pieces.length - 1; i > 0; i--) {
+    const j = Math.floor(Math.random() * (i + 1));
+    [pieces[i], pieces[j]] = [pieces[j], pieces[i]];
+  }
+  return pieces;
+}
+
+function refillBagIfNeeded() {
+  if (bag.length === 0) bag = generateBag();
+}
+
+function getNextPiece() {
+  while (nextQueue.length < 5) {
+    refillBagIfNeeded();
+    nextQueue.push(bag.shift());
+  }
+  return nextQueue.shift();
+}
+
+class Piece {
+  constructor(type) {
+    this.type = type;
+    this.shape = SHAPES[type].map(row => [...row]);
+    this.color = COLORS[type];
+    this.rotation = 0;
+    this.x = Math.floor((COLS - this.shape[0].length) / 2);
+    this.y = 0;
+  }
+}
+
+function spawnPiece() {
+  const type = getNextPiece();
+  currentPiece = new Piece(type);
+  canHold = true;
+  lockResetCount = 0;
+  clearTimeout(lockTimer);
+  lockTimer = null;
+  if (checkCollision(currentPiece.x, currentPiece.y, currentPiece.shape)) {
+    resetGame();
+  }
+}
+
+function checkCollision(px, py, shape) {
+  for (let r = 0; r < shape.length; r++) {
+    for (let c = 0; c < shape[r].length; c++) {
+      if (shape[r][c]) {
+        const newX = px + c;
+        const newY = py + r;
+        if (newX < 0 || newX >= COLS || newY >= ROWS) return true;
+        if (newY >= 0 && board[newY][newX]) return true;
+      }
+    }
+  }
+  return false;
+}
+
+function rotateMatrix(matrix, dir) {
+  const N = matrix.length;
+  const result = Array.from({ length: N }, () => Array(N).fill(0));
+  for (let r = 0; r < N; r++) {
+    for (let c = 0; c < N; c++) {
+      if (dir === 1) {
+        result[c][N - 1 - r] = matrix[r][c];
+      } else {
+        result[N - 1 - c][r] = matrix[r][c];
+      }
+    }
+  }
+  return result;
+}
+
+function rotatePiece(dir) {
+  if (!currentPiece || currentPiece.type === 'O') return;
+  const oldRotation = currentPiece.rotation;
+  const newRotation = (oldRotation + dir + 4) % 4;
+  const newShape = rotateMatrix(currentPiece.shape, dir);
+  const key = `${oldRotation}-${newRotation}`;
+  const kickTable = (currentPiece.type === 'I') ? KICK_TABLE_I[key] : KICK_TABLE_JLSTZ[key];
+  if (!kickTable) return;
+  for (let i = 0; i < kickTable.length; i++) {
+    const [dx, dy] = kickTable[i];
+    if (!checkCollision(currentPiece.x + dx, currentPiece.y - dy, newShape)) {
+      currentPiece.x += dx;
+      currentPiece.y -= dy;
+      currentPiece.shape = newShape;
+      currentPiece.rotation = newRotation;
+      handleLockReset();
+      break;
+    }
+  }
+}
+
+function move(dx, dy) {
+  if (!currentPiece) return false;
+  if (!checkCollision(currentPiece.x + dx, currentPiece.y + dy, currentPiece.shape)) {
+    currentPiece.x += dx;
+    currentPiece.y += dy;
+    if (dx !== 0) handleLockReset();
+    return true;
+  }
+  return false;
+}
+
+function hardDrop() {
+  if (!currentPiece) return;
+  while (move(0, 1)) {}
+  lockPiece();
+}
+
+function doHold() {
+  if (!canHold || !currentPiece) return;
+  clearTimeout(lockTimer);
+  lockTimer = null;
+  const temp = currentPiece.type;
+  if (holdPiece === null) {
+    holdPiece = temp;
+    spawnPiece();
+  } else {
+    currentPiece = new Piece(holdPiece);
+    holdPiece = temp;
+  }
+  canHold = false;
+}
+
+function handleLockReset() {
+  const isGrounded = checkCollision(currentPiece.x, currentPiece.y + 1, currentPiece.shape);
+  if (isGrounded) {
+    if (lockResetCount < MAX_LOCK_RESETS) {
+      lockResetCount++;
+      clearTimeout(lockTimer);
+      lockTimer = setTimeout(lockPiece, LOCK_DELAY);
+    }
+  } else {
+    clearTimeout(lockTimer);
+    lockTimer = null;
+  }
+}
+
+function lockPiece() {
+  clearTimeout(lockTimer);
+  lockTimer = null;
+  for (let r = 0; r < currentPiece.shape.length; r++) {
+    for (let c = 0; c < currentPiece.shape[r].length; c++) {
+      if (currentPiece.shape[r][c]) {
+        const ry = currentPiece.y + r;
+        const rx = currentPiece.x + c;
+        if (ry >= 0 && ry < ROWS) {
+          board[ry][rx] = currentPiece.color;
+        }
+      }
+    }
+  }
+  for (let r = ROWS - 1; r >= 0; r--) {
+    if (board[r].every(cell => cell !== null)) {
+      board.splice(r, 1);
+      board.unshift(Array(COLS).fill(null));
+      r++;
+    }
+  }
+  spawnPiece();
+}
+
+function getGhostY() {
+  if (!currentPiece) return 0;
+  let ghostY = currentPiece.y;
+  while (!checkCollision(currentPiece.x, ghostY + 1, currentPiece.shape)) {
+    ghostY++;
+  }
+  return ghostY;
+}
+
+// ==========================================
+// 描画
+// ==========================================
+function drawBlock(cCtx, x, y, color, alpha = 1.0) {
+  cCtx.save();
+  cCtx.globalAlpha = alpha;
+  cCtx.fillStyle = color;
+  cCtx.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE - 1, BLOCK_SIZE - 1);
+  cCtx.restore();
+}
+
+function draw() {
+  ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+  // テンプレートガイド（色付き半透明）
+  const templateBlocks = getCurrentTemplateBlocks();
+  templateBlocks.forEach(b => {
+    let targetX = isMirrored ? (COLS - 1) - b.x : b.x;
+    const color = COLORS[b.type] || '#ffffff';
+    drawBlock(ctx, targetX, b.y, color, 0.35);
+  });
+
+  // 固定ブロック
+  for (let r = 0; r < ROWS; r++) {
+    for (let c = 0; c < COLS; c++) {
+      if (board[r][c]) {
+        drawBlock(ctx, c, r, board[r][c]);
+      }
+    }
+  }
+
+  // ゴースト + アクティブ
+  if (currentPiece) {
+    const ghostY = getGhostY();
+    for (let r = 0; r < currentPiece.shape.length; r++) {
+      for (let c = 0; c < currentPiece.shape[r].length; c++) {
+        if (currentPiece.shape[r][c]) {
+          drawBlock(ctx, currentPiece.x + c, ghostY + r, currentPiece.color, 0.25);
+          drawBlock(ctx, currentPiece.x + c, currentPiece.y + r, currentPiece.color);
+        }
+      }
+    }
+  }
+
+  drawMiniPreview(holdCtx, holdPiece);
+  drawNextPreview();
+}
+
+function drawMiniPreview(cCtx, type) {
+  cCtx.clearRect(0, 0, 60, 60);
+  if (!type) return;
+  const shape = SHAPES[type];
+  const color = COLORS[type];
+  for (let r = 0; r < shape.length; r++) {
+    for (let c = 0; c < shape[r].length; c++) {
+      if (shape[r][c]) {
+        cCtx.fillStyle = color;
+        cCtx.fillRect(c * 12 + 10, r * 12 + 10, 11, 11);
+      }
+    }
+  }
+}
+
+function drawNextPreview() {
+  nextCtx.clearRect(0, 0, 60, 180);
+  for (let i = 0; i < Math.min(3, nextQueue.length); i++) {
+    const type = nextQueue[i];
+    const shape = SHAPES[type];
+    const color = COLORS[type];
+    for (let r = 0; r < shape.length; r++) {
+      for (let c = 0; c < shape[r].length; c++) {
+        if (shape[r][c]) {
+          nextCtx.fillStyle = color;
+          nextCtx.fillRect(c * 10 + 10, i * 50 + r * 10 + 10, 9, 9);
+        }
+      }
+    }
+  }
+}
+
+// ==========================================
+// ゲームループ & 入力
+// ==========================================
+let lastDropTime = Date.now();
+const DROP_INTERVAL = 1000;
+
+function gameLoop() {
+  const now = Date.now();
+  if (now - lastDropTime > DROP_INTERVAL) {
+    if (currentPiece) {
+      if (!move(0, 1)) {
+        if (!lockTimer) {
+          lockTimer = setTimeout(lockPiece, LOCK_DELAY);
+        }
+      }
+    }
+    lastDropTime = now;
+  }
+  draw();
+  requestAnimationFrame(gameLoop);
+}
+
+function resetGame() {
+  board = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+  holdPiece = null;
+  canHold = true;
+  bag = [];
+  nextQueue = [];
+  // NEXTを先に埋める
+  while (nextQueue.length < 5) {
+    refillBagIfNeeded();
+    nextQueue.push(bag.shift());
+  }
+  spawnPiece();
+}
+
+// キーボード
+document.addEventListener('keydown', (e) => {
+  if (e.repeat && (e.key === 'ArrowUp' || e.key === ' ')) return;
+  switch (e.key) {
+    case 'ArrowLeft': move(-1, 0); break;
+    case 'ArrowRight': move(1, 0); break;
+    case 'ArrowDown': move(0, 1); break;
+    case 'ArrowUp':
+    case ' ': hardDrop(); break;
+    case 'x': case 'X': rotatePiece(1); break;
+    case 'z': case 'Z': rotatePiece(-1); break;
+    case 'c': case 'C': case 'Shift': doHold(); break;
+  }
+});
+
+// UI
+document.getElementById('templateSelect').addEventListener('change', (e) => {
+  currentTemplate = e.target.value;
+});
+
+document.getElementById('mirrorBtn').addEventListener('click', (e) => {
+  isMirrored = !isMirrored;
+  e.target.innerText = `反転: ${isMirrored ? 'ON' : 'OFF'}`;
+});
+
+document.getElementById('resetBtn').addEventListener('click', resetGame);
+
+document.getElementById('saveTemplateBtn').addEventListener('click', () => {
+  const name = document.getElementById('templateName').value.trim();
+  const text = document.getElementById('templateText').value;
+  if (!name) {
+    alert('テンプレ名を入力してください');
+    return;
+  }
+  if (BUILTIN_TEMPLATES[name] || name === 'none') {
+    alert('その名前は組み込みテンプレで使われています');
+    return;
+  }
+  const blocks = parseTemplateText(text);
+  if (blocks.length === 0) {
+    alert('有効なブロックがありません');
+    return;
+  }
+  userTemplates[name] = blocks;
+  saveUserTemplates();
+  document.getElementById('templateName').value = '';
+  document.getElementById('templateText').value = '';
+  alert(`「${name}」を保存しました`);
+});
+
+// モバイル
+const bindBtn = (id, action) => {
+  const el = document.getElementById(id);
+  el.addEventListener('touchstart', (e) => { e.preventDefault(); action(); });
+  el.addEventListener('mousedown', (e) => { e.preventDefault(); action(); });
+};
+bindBtn('btnLeft', () => move(-1, 0));
+bindBtn('btnRight', () => move(1, 0));
+bindBtn('btnDown', () => move(0, 1));
+bindBtn('btnSoftDrop', () => move(0, 2));
+bindBtn('btnHardDrop', () => hardDrop());
+bindBtn('btnRotCW', () => rotatePiece(1));
+bindBtn('btnRotCCW', () => rotatePiece(-1));
+bindBtn('btnHold', () => doHold());
+
+// 初期化
+loadUserTemplates();
+resetGame();
+gameLoop();
+</script>
+</body>
+</html>
