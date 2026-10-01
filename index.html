@@ -82,7 +82,7 @@ textarea{height:130px;font-family:monospace;resize:vertical}
     <div class="side"><div class="pv"><div>HOLD</div><canvas id="holdCanvas" width="58" height="58"></canvas></div></div>
     <div class="cw">
       <canvas id="mainCanvas" width="200" height="400"></canvas>
-      <div id="pauseOv" class="hidden">PAUSED<span>Pキー または 一時停止ボタンで解除</span></div>
+      <div id="pauseOv" class="hidden">PAUSED<span>Pキー または ▶再開ボタンでスタート</span></div>
     </div>
     <div class="side"><div class="pv"><div>NEXT</div><canvas id="nextCanvas" width="58" height="290"></canvas></div></div>
   </div>
@@ -103,6 +103,9 @@ textarea{height:130px;font-family:monospace;resize:vertical}
     <div class="row"><label>ソフトドロップ間隔（ms / 0=瞬間）</label><input type="number" id="sdIn" min="0" max="500"></div>
     <div class="row"><label>落下間隔（ms / 0=自然落下なし）</label><input type="number" id="gravIn" min="0" max="5000"></div>
     <div class="row"><label>ロック遅延（ms）</label><input type="number" id="lockIn" min="0" max="3000"></div>
+    <div class="row"><label>ツモ（テンプレ練習時）</label>
+      <select id="tsumoSel"><option value="normal">通常（7-bag・ランダム）</option><option value="fixed">固定（最下段のミノから順に来る・必ず組める）</option></select></div>
+    <div class="row"><label>強制ハードドロップ（最下段が更新されてからの左右移動・回転の回数 / 0=無効）</label><input type="number" id="limIn" min="0" max="99"></div>
     <div class="row"><label>左右反転</label>
       <select id="mirrorSel"><option value="manual">手動</option><option value="auto">自動判定（最下段のミノが先頭付近に無ければ反転）</option></select></div>
   </div>
@@ -110,9 +113,13 @@ textarea{height:130px;font-family:monospace;resize:vertical}
 
 <div id="histView" class="view hidden"><div class="panel">
     <h2><span>履歴</span><button id="histClose">✕ 戻る</button></h2>
-    <div class="hint">自動履歴: 完成したテンプレを新しい順に5件まで保存（6件目で古いものから消えます）。<br>固定履歴: 自動では更新されず、5件まで手動で保存・削除できます。ゲーム画面の「📌」ボタン（完成後／発火後／発火→ゲームオーバー後）か、自動履歴の「固定」から保存します。</div>
+    <div class="hint">自動履歴: 完成したテンプレを新しい順に5件まで保存（6件目で古いものから消えます）。<br>固定履歴: 自動では更新されず、20件まで手動で保存・削除できます。ゲーム画面の「📌」ボタン（完成後／発火後／発火→ゲームオーバー後）か、自動履歴の「固定」から保存します。</div>
     <div class="hh">自動履歴（最新5件）</div><div id="histAuto"></div>
     <div class="hh">固定履歴 <span id="pinCnt"></span></div><div id="histPins"></div>
+    <div class="hh">テキストで共有</div>
+    <div class="hint">各履歴の「テキスト」で出力。貼り付けて読み込むとリプレイを見られます（固定履歴にも追加可）。</div>
+    <textarea id="histText" style="height:90px" placeholder="TTP1:..."></textarea>
+    <div class="bar"><button id="impReplay">読み込んでリプレイ</button><button id="impPin">固定履歴に追加</button><button id="copyHist">コピー</button></div>
   </div></div>
 <div id="repView" class="view hidden"><div class="panel">
     <h2><span id="repTitle">リプレイ</span><button id="repClose">✕ 履歴へ</button></h2>
@@ -125,16 +132,16 @@ textarea{height:130px;font-family:monospace;resize:vertical}
   <div class="panel">
     <h2><span>テンプレ作成</span><button id="edClose">✕ ゲームに戻る</button></h2>
     <div class="hint">ミノをドラッグして配置 / タップで回転 / ゴミ箱へドラッグで削除。<br>
-      ステップごとに盤面を作り、最終ステップが完成形です。ステップ追加は直前の盤面を複製します。<br>
+      ステップごとに盤面を作り、最終ステップが完成形です。ステップ追加は直前の盤面を複製します。<br>途中でラインを消すテンプレは、揃った行を含む盤面を作り、「ステップ追加(ライン消去後)」で消去後の盤面から次を作ります。ゲーム画面では消える行の両端に白いマーカーが出ます。<br>
       テキスト形式: 1行10文字、<b>.</b>=空白、IJLOSTZ=ミノ、X=任意ブロック、最終行が最下段、<b>---</b>でステップ区切り。テキストを直接編集したら「テキスト読み込み」を押してください。</div>
     <div id="palette"></div>
     <div class="steps" id="stepTabs"></div>
     <div class="ba"><div id="egrid"></div><div id="trash">🗑<span>削除</span></div></div>
-    <div class="bar"><button id="addStep">＋ステップ追加</button><button id="delStep">ステップ削除</button><button id="clrBtn">全消去</button></div>
+    <div class="bar"><button id="addStep">＋ステップ追加</button><button id="addClr">＋ステップ追加(ライン消去後)</button><button id="delStep">ステップ削除</button><button id="clrBtn">全消去</button></div>
     <textarea id="out" placeholder="「テキスト出力」でここに表示されます。貼り付けて「テキスト読み込み」も可能です。"></textarea>
     <div class="bar"><button id="genBtn">テキスト出力</button><button id="loadBtn">テキスト読み込み</button><button id="copyBtn">コピー</button><button id="sampleBtn">例: 山岳積み2号</button></div>
     <input type="text" id="name" placeholder="テンプレ名">
-    <div class="bar"><button id="saveBtn" class="ok">保存して練習</button></div>
+    <div class="bar"><button id="saveBtn" class="ok">保存</button></div>
     <strong style="font-size:.85rem">保存済みテンプレ</strong>
     <div id="savedList" style="margin-top:6px"></div>
   </div>
@@ -158,13 +165,14 @@ OOTTSS.ZLI
 OOTSS.LLLI`;
 
 // ---------- 状態 ----------
-let S={guide:'gray',mirror:'manual',mode:'free',das:150,arr:30,sd:30,grav:1000,lock:500};
+const PIN_MAX=20;
+let S={guide:'gray',mirror:'manual',mode:'free',das:150,arr:30,sd:30,grav:1000,lock:500,tsumo:'normal',lim:15};
 let tpls={},hist=[],pins=[];
 try{Object.assign(S,JSON.parse(localStorage.getItem('ttpSettings')||'{}'));tpls=JSON.parse(localStorage.getItem('ttpTemplates')||'{}');hist=JSON.parse(localStorage.getItem('ttpHist')||'[]');pins=JSON.parse(localStorage.getItem('ttpPins')||'[]')}catch{}
 if(!['gray','color','off'].includes(S.guide))S.guide='gray';
 const saveS=()=>{try{localStorage.setItem('ttpSettings',JSON.stringify(S))}catch{}};
 let curMode='game',isPaused=false,pauseStart=0,toastT,endT,lockT=null,lockCnt=0;
-let board,cur,hold,canHold,nextQ,bag,steps=[[]],stepI,mirrored,phase,ended,placed,t0,curKey='none',ev=[],snaps={},fired=false,lastRot=false,lastKick=0;
+let board,cur,hold,canHold,nextQ,bag,steps=[[]],stepI,mirrored,phase,ended,placed,t0,curKey='none',ev=[],snaps={},fired=false,lastRot=false,lastKick=0,fixedQ=[],lowY=0,opCnt=0,tgts=[[]];
 let lastDrop=Date.now();
 const ctx=$('mainCanvas').getContext('2d'),holdCtx=$('holdCanvas').getContext('2d'),nextCtx=$('nextCanvas').getContext('2d');
 
@@ -186,6 +194,32 @@ const nowT=()=>Date.now()-t0;
 function rec(){if(cur&&!ended)ev.push([nowT(),cur.type,cur.x,cur.y,cur.rotation])}
 const store=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{toast('保存に失敗しました（容量不足）')}};
 const mx=x=>mirrored?COLS-1-x:x;
+const MIR={J:'L',L:'J',S:'Z',Z:'S'},sw=t=>MIR[t]||t,mt=t=>mirrored?sw(t):t;
+// 揃った行を消した後のブロック配置（途中でラインを消すステップ用）
+function collapse(bl){
+  const cnt={};bl.forEach(b=>cnt[b.y]=(cnt[b.y]||0)+1);
+  const full=Object.keys(cnt).filter(y=>cnt[y]===COLS).map(Number);
+  if(!full.length)return bl;
+  return bl.filter(b=>!full.includes(b.y)).map(b=>({...b,y:b.y+full.filter(f=>f>b.y).length}));
+}
+// 固定ツモ：ステップごとに「新しく置くミノ」を求め、各ステップ内は最下段から順に並べる
+function buildFixed(){
+  if(S.tsumo!=='fixed'||curKey==='none'||!steps.length)return [];
+  const out=[];
+  steps.forEach((st,i)=>{
+    const prev=new Set((i?tgts[i-1]:[]).map(b=>b.x+','+b.y)),grp={},ps=[];
+    st.forEach(b=>{if(b.type!=='X'&&!prev.has(b.x+','+b.y))(grp[b.type]=grp[b.type]||[]).push({r:b.y,c:b.x})});
+    for(const t in grp){const cs=grp[t];partition(cs,t).p.forEach(ids=>{const ys=ids.map(k=>cs[k].r);ps.push({t,b:Math.max(...ys),m:ys.reduce((x,v)=>x+v,0)})})}
+    ps.sort((x,y)=>y.b-x.b||y.m-x.m);
+    ps.forEach(q=>out.push(mt(q.t)));
+  });
+  return out;
+}
+function onMirror(){
+  if(S.tsumo!=='fixed')return;
+  fixedQ=fixedQ.map(sw);nextQ=nextQ.map(sw);if(hold)hold=sw(hold);
+  if(cur&&placed===0){cur=new Piece(sw(cur.type));rec()}
+}
 
 // ---------- テンプレ解析 ----------
 function parseSteps(text){
@@ -204,7 +238,7 @@ function updInfo(){
 }
 
 // ---------- ゲームロジック ----------
-function fillQ(){while(nextQ.length<5){if(!bag.length){bag=['I','J','L','O','S','T','Z'];for(let i=6;i>0;i--){const j=Math.floor(Math.random()*(i+1));[bag[i],bag[j]]=[bag[j],bag[i]]}}nextQ.push(bag.shift())}}
+function fillQ(){while(nextQ.length<5){if(fixedQ.length){nextQ.push(fixedQ.shift());continue}if(!bag.length){bag=['I','J','L','O','S','T','Z'];for(let i=6;i>0;i--){const j=Math.floor(Math.random()*(i+1));[bag[i],bag[j]]=[bag[j],bag[i]]}}nextQ.push(bag.shift())}}
 class Piece{constructor(t){this.type=t;this.shape=SHAPES[t].map(r=>[...r]);this.rotation=0;this.x=Math.floor((COLS-this.shape[0].length)/2);this.y=0}}
 function autoMirror(){
   if(S.mirror!=='auto'||curKey==='none'||placed>0||mirrored)return;
@@ -216,7 +250,7 @@ function autoMirror(){
 function spawn(){
   if(ended){cur=null;return}
   fillQ();cur=new Piece(nextQ.shift());fillQ();
-  canHold=true;lockCnt=0;lastRot=false;clearTimeout(lockT);lockT=null;
+  canHold=true;lockCnt=0;lastRot=false;lowY=0;opCnt=0;clearTimeout(lockT);lockT=null;
   autoMirror();
   if(hit(cur.x,cur.y,cur.shape)){
     if(fired){ended=true;cur=null;snap('over');$('info').textContent=`ゲームオーバー ${(nowT()/1000).toFixed(1)}秒（リセットで再開）`;toast('ゲームオーバー');return}
@@ -234,19 +268,20 @@ const rotM=(m,d)=>{const N=m.length,o=Array.from({length:N},()=>Array(N).fill(0)
 function rotate(d){
   if(idle()||cur.type==='O')return;
   const o=cur.rotation,n=(o+d+4)%4,sh=rotM(cur.shape,d),k=`${o}-${n}`,tb=(cur.type==='I'?KI:KJ)[k];
-  for(let ki=0;ki<tb.length;ki++){const[dx,dy]=tb[ki];if(!hit(cur.x+dx,cur.y-dy,sh)){cur.x+=dx;cur.y-=dy;cur.shape=sh;cur.rotation=n;lastRot=true;lastKick=ki;rec();lockReset();break}}
+  for(let ki=0;ki<tb.length;ki++){const[dx,dy]=tb[ki];if(!hit(cur.x+dx,cur.y-dy,sh)){cur.x+=dx;cur.y-=dy;cur.shape=sh;cur.rotation=n;lastRot=true;lastKick=ki;rec();opCnt++;if(cur.y>lowY){lowY=cur.y;opCnt=0}lockReset();chkLim();break}}
 }
 function move(dx,dy){
   if(idle())return false;
-  if(!hit(cur.x+dx,cur.y+dy,cur.shape)){cur.x+=dx;cur.y+=dy;lastRot=false;rec();if(dx)lockReset();if(dy&&hit(cur.x,cur.y+1,cur.shape)&&!lockT)lockT=setTimeout(lockPiece,S.lock);return true}
+  if(!hit(cur.x+dx,cur.y+dy,cur.shape)){cur.x+=dx;cur.y+=dy;lastRot=false;rec();if(dx){opCnt++;lockReset()}if(cur.y>lowY){lowY=cur.y;opCnt=0}if(dy&&hit(cur.x,cur.y+1,cur.shape)&&!lockT)lockT=setTimeout(lockPiece,S.lock);chkLim();return true}
   return false;
 }
+function chkLim(){if(S.lim>0&&opCnt>=S.lim&&cur&&!ended&&!isPaused){opCnt=0;hardDrop()}}
 function hardDrop(){if(idle())return;let d=0;while(!hit(cur.x,cur.y+1,cur.shape)){cur.y++;d++}if(d)lastRot=false;rec();lockPiece()}
 function doHold(){
   if(!canHold||idle())return;
   clearTimeout(lockT);lockT=null;
   const t=cur.type;
-  if(!hold){hold=t;spawn()}else{cur=new Piece(hold);hold=t;lastRot=false;rec()}
+  if(!hold){hold=t;spawn()}else{cur=new Piece(hold);hold=t;lastRot=false;lowY=0;opCnt=0;rec()}
   canHold=false;
 }
 function lockReset(){
@@ -269,7 +304,7 @@ function lockPiece(){
 }
 function checkStep(){
   if(curKey==='none')return;
-  const t=steps[stepI];let n=0;
+  const t=tgts[stepI];let n=0;
   board.forEach(r=>r.forEach(v=>{if(v)n++}));
   if(n!==t.length||!t.every(b=>board[b.y][mx(b.x)]))return;
   if(stepI<steps.length-1){stepI++;toast(`STEP ${stepI} CLEAR!`);updInfo();flash();return}
@@ -278,7 +313,7 @@ function checkStep(){
   else{phase='fire';toast('完成！ ライン消去で発火しよう');updInfo();flash()}
 }
 function onFire(){
-  fired=true;snap('fire');
+  fired=true;snap('fire');updHist();
   if(S.mode==='fire')finish('発火成功！');
   else{phase='free';toast('発火！ 以降は通常プレイ');updInfo();flash()}
 }
@@ -296,14 +331,14 @@ function resetGame(){
   board=Array.from({length:ROWS},()=>Array(COLS).fill(null));
   hold=null;canHold=true;nextQ=[];bag=[];stepI=0;mirrored=false;ended=false;placed=0;t0=Date.now();
   phase=curKey==='none'?'free':'build';
-  ev=[];snaps={};fired=false;atk=0;atkLog=[];ren=-1;b2b=false;updAtk();updSnapBtns();
+  tgts=steps.map(collapse);fixedQ=buildFixed();ev=[];snaps={};fired=false;atk=0;atkLog=[];ren=-1;b2b=false;histRef=null;updAtk();updSnapBtns();
   $('mirrorBtn').textContent='反転: OFF';
   togglePause(false);
   spawn();updInfo();lastDrop=Date.now();
 }
 
 // ---------- 攻撃 ----------
-let atk=0,atkLog=[],ren=-1,b2b=false;
+let atk=0,atkLog=[],ren=-1,b2b=false,histRef=null;
 const RENB=[0,1,1,1,2,2,3,3,4,4,4,4,4,5];
 function tSpin(){
   if(cur.type!=='T'||!lastRot)return 'none';
@@ -340,10 +375,11 @@ function updAtk(){
 // ---------- 履歴の記録 ----------
 function snap(st){snaps[st]={n:curKey,st,s:+(nowT()/1000).toFixed(1),p:placed,a:atk,d:Date.now(),ev:ev.slice(),saved:false};updSnapBtns()}
 function updSnapBtns(){[['sbComplete','complete'],['sbFire','fire'],['sbOver','over']].forEach(([id,k])=>$(id).classList.toggle('hidden',!snaps[k]||snaps[k].saved))}
-function addHist(){hist.unshift({n:curKey,st:'complete',s:+(nowT()/1000).toFixed(1),p:placed,a:atk,d:Date.now(),ev:ev.slice()});hist=hist.slice(0,5);store('ttpHist',hist)}
+function addHist(){histRef={n:curKey,st:'complete',s:+(nowT()/1000).toFixed(1),p:placed,a:atk,d:Date.now(),ev:ev.slice()};hist.unshift(histRef);hist=hist.slice(0,5);store('ttpHist',hist)}
+function updHist(){if(histRef&&hist.includes(histRef)){const x=snaps.fire;Object.assign(histRef,{st:'fire',s:x.s,p:x.p,a:x.a,ev:x.ev});store('ttpHist',hist)}}
 [['sbComplete','complete'],['sbFire','fire'],['sbOver','over']].forEach(([id,k])=>$(id).onclick=()=>{
   const x=snaps[k];if(!x)return;
-  if(pins.length>=5)return toast('固定履歴が満杯です（履歴画面で削除してください）');
+  if(pins.length>=PIN_MAX)return toast('固定履歴が満杯です（履歴画面で削除してください）');
   pins.push({...x,saved:undefined});x.saved=true;store('ttpPins',pins);updSnapBtns();toast('固定履歴に保存しました');
 });
 
@@ -356,6 +392,8 @@ function drawField(c,brd,pc,guide){
     const g=S.guide==='gray',col=g?GRAY:COLORS[b.type];
     blk(c,b.x,b.y,col,g?.4:.3);
     c.save();c.globalAlpha=.7;c.strokeStyle=col;c.strokeRect(b.x*B+.5,b.y*B+.5,B-2,B-2);c.restore()});
+  if(guide){const cn={};guide.forEach(b=>cn[b.y]=(cn[b.y]||0)+1);
+    for(const y in cn)if(cn[y]===COLS){c.save();c.fillStyle='#fff';c.globalAlpha=.8;c.fillRect(0,y*B,3,B-1);c.fillRect(COLS*B-3,y*B,3,B-1);c.restore()}}
   brd.forEach((row,r)=>row.forEach((t,x)=>{if(t)blk(c,x,r,COLORS[t])}));
   if(pc){
     let gy=pc.y;while(!hit(pc.x,gy+1,pc.shape,brd))gy++;
@@ -363,7 +401,7 @@ function drawField(c,brd,pc,guide){
   }
 }
 function draw(){
-  const g=S.guide!=='off'&&phase!=='free'&&curKey!=='none'?(steps[stepI]||[]).map(b=>({x:mx(b.x),y:b.y,type:b.type})):null;
+  const g=S.guide!=='off'&&phase!=='free'&&curKey!=='none'?((phase==='build'?steps:tgts)[stepI]||[]).map(b=>({x:mx(b.x),y:b.y,type:mt(b.type)})):null;
   drawField(ctx,board,cur,g);
   holdCtx.clearRect(0,0,58,58);
   if(hold){const s=SHAPES[hold];mini(holdCtx,hold,(58-s[0].length*11)/2,(58-s.length*11)/2,11)}
@@ -440,13 +478,13 @@ bindHold('bL','L');bindHold('bR','R');bindHold('bD','D');
 bindSingle('bDrop',hardDrop);bindSingle('bCW',()=>rotate(1));bindSingle('bCCW',()=>rotate(-1));bindSingle('bHold',doHold);
 $('bP').onclick=$('pauseBtn').onclick=()=>togglePause();
 $('resetBtn').onclick=resetGame;
-$('mirrorBtn').onclick=()=>{if(S.mirror==='auto')return;mirrored=!mirrored;$('mirrorBtn').textContent=`反転: ${mirrored?'ON':'OFF'}`};
+$('mirrorBtn').onclick=()=>{if(S.mirror==='auto')return;mirrored=!mirrored;$('mirrorBtn').textContent=`反転: ${mirrored?'ON':'OFF'}`;onMirror()};
 $('tplSel').onchange=e=>{curKey=e.target.value;resetGame()};
 $('edBtn').onclick=()=>setMode('edit');$('edClose').onclick=()=>setMode('game');
 $('setBtn').onclick=()=>setMode('set');$('setClose').onclick=()=>setMode('game');
-[['guideSel','guide'],['mirrorSel','mirror'],['modeSel','mode'],['dasIn','das'],['arrIn','arr'],['sdIn','sd'],['gravIn','grav'],['lockIn','lock']].forEach(([id,k])=>{
+[['guideSel','guide'],['mirrorSel','mirror'],['modeSel','mode'],['tsumoSel','tsumo'],['limIn','lim'],['dasIn','das'],['arrIn','arr'],['sdIn','sd'],['gravIn','grav'],['lockIn','lock']].forEach(([id,k])=>{
   const e=$(id);e.value=S[k];
-  e.onchange=()=>{S[k]=e.type==='number'?Math.max(0,Math.floor(+e.value||0)):e.value;e.value=S[k];saveS();$('mirrorBtn').style.opacity=S.mirror==='auto'?.5:1;if(k==='mode'||k==='mirror')resetGame()};
+  e.onchange=()=>{S[k]=e.type==='number'?Math.max(0,Math.floor(+e.value||0)):e.value;e.value=S[k];saveS();$('mirrorBtn').style.opacity=S.mirror==='auto'?.5:1;if(k==='mode'||k==='mirror'||k==='tsumo')resetGame()};
 });
 $('mirrorBtn').style.opacity=S.mirror==='auto'?.5:1;
 
@@ -517,11 +555,11 @@ function renderEd(){
     e.className='cell';e.dataset.r=r;e.dataset.c=c;e.textContent=d.t;
     e.style.background=tcol(d.t);e.style.color=tfg(d.t);
     if(d.t!=='.'){
-      const sh=[];
-      if(!same(r-1,c,d.id))sh.push('inset 0 2px #fff');
-      if(!same(r+1,c,d.id))sh.push('inset 0 -2px #fff');
-      if(!same(r,c-1,d.id))sh.push('inset 2px 0 #fff');
-      if(!same(r,c+1,d.id))sh.push('inset -2px 0 #fff');
+      const sh=[],nb=(R,C)=>g[R]&&g[R][C],dif=(R,C)=>{const q=nb(R,C);return !q||q.id!==d.id},emp=(R,C)=>{const q=nb(R,C);return !q||q.t==='.'};
+      if(dif(r-1,c))sh.push('inset 0 2px #fff');
+      if(emp(r+1,c))sh.push('inset 0 -2px #fff');
+      if(dif(r,c-1))sh.push('inset 2px 0 #fff');
+      if(emp(r,c+1))sh.push('inset -2px 0 #fff');
       e.style.boxShadow=sh.join(',');
     }
     e.addEventListener('pointerdown',ev=>{
@@ -634,15 +672,22 @@ $('copyBtn').onclick=()=>{
   (navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).catch(()=>{$('out').select();document.execCommand('copy')}).then(()=>toast('コピーしました'));
 };
 $('addStep').onclick=()=>{eSteps.splice(eI+1,0,eg().map(r=>r.map(q=>({...q}))));eI++;renderEd()};
+$('addClr').onclick=()=>{
+  const g=eg(),keep=g.filter(r=>r.some(q=>q.t==='.')),n=ER-keep.length,idm={};
+  const ng=[...Array.from({length:n},()=>Array.from({length:EC},()=>({t:'.',id:0}))),...keep.map(r=>r.map(q=>({...q})))];
+  const cut=new Set();g.forEach(r=>{if(!r.some(q=>q.t==='.'))r.forEach(q=>cut.add(q.id))});
+  ng.forEach((r,ri)=>r.forEach((q,ci)=>{if(q.t!=='.'&&cut.has(q.id)){const k=q.id+':'+ri;(idm[k]=idm[k]||++pc);r[ci]={t:q.t,id:idm[k]}}}));
+  eSteps.splice(eI+1,0,ng);eI++;renderEd();
+};
 $('delStep').onclick=()=>{if(eSteps.length>1){eSteps.splice(eI,1);eI=Math.min(eI,eSteps.length-1);renderEd()}};
-$('clrBtn').onclick=()=>{eSteps=[newGrid()];eI=0;$('out').value='';renderEd()};
+$('clrBtn').onclick=()=>{eSteps=[newGrid()];eI=0;$('out').value='';$('name').value='';renderEd()};
 $('saveBtn').onclick=()=>{
   const n=$('name').value.trim();
   if(!n)return toast('テンプレ名を入力してください');
   if(n==='none')return toast('予約名です');
   genText();
   if(!parseSteps($('out').value).length)return toast('ブロックがありません');
-  tpls[n]=$('out').value;saveT();toast(`「${n}」を保存しました`);practice(n);
+  tpls[n]=$('out').value;saveT();toast(`「${n}」を保存しました`);
 };
 
 // ---------- 履歴・リプレイ ----------
@@ -656,12 +701,13 @@ function histList(el,arr,pinned){
     const sm=document.createElement('small');sm.textContent=new Date(e.d).toLocaleString('ja-JP');s.appendChild(sm);d.appendChild(s);
     const add=(t,f,c)=>{const b=document.createElement('button');b.textContent=t;if(c)b.className=c;b.onclick=f;d.appendChild(b)};
     add('リプレイ',()=>openReplay(e));
+    add('テキスト',()=>exportEntry(e));
     if(pinned)add('削除',()=>{pins.splice(i,1);store('ttpPins',pins);renderHist()},'del');
-    else add('固定',()=>{if(pins.length>=5)return toast('固定履歴が満杯です');pins.push({...e});store('ttpPins',pins);renderHist()});
+    else add('固定',()=>{if(pins.length>=PIN_MAX)return toast('固定履歴が満杯です');pins.push({...e});store('ttpPins',pins);renderHist()});
     el.appendChild(d);
   });
 }
-function renderHist(){histList($('histAuto'),hist,false);histList($('histPins'),pins,true);$('pinCnt').textContent=`${pins.length}/5`}
+function renderHist(){histList($('histAuto'),hist,false);histList($('histPins'),pins,true);$('pinCnt').textContent=`${pins.length}/${PIN_MAX}`}
 let rp=null;
 const shapeOf=(t,r)=>{let s=SHAPES[t].map(a=>[...a]);for(let i=0;i<r;i++)s=rotM(s,1);return s};
 function openReplay(e){
@@ -680,7 +726,7 @@ function repTick(){
   const b=Array.from({length:ROWS},()=>Array(COLS).fill(null));let pe=null;
   for(const e of rp.e.ev){
     if(e[0]>rp.T)break;
-    if(e[1]==='L'){
+    if(e.length===2){
       if(pe){
         shapeOf(pe[1],pe[4]).forEach((row,r)=>row.forEach((v,c)=>{const y=pe[3]+r,x=pe[2]+c;if(v&&y>=0&&y<ROWS)b[y][x]=pe[1]}));
         for(let r=ROWS-1;r>=0;r--)if(b[r].every(v=>v)){b.splice(r,1);b.unshift(Array(COLS).fill(null));r++}
@@ -690,13 +736,54 @@ function repTick(){
   }
   drawField($('repCanvas').getContext('2d'),b,pe&&{type:pe[1],x:pe[2],y:pe[3],shape:shapeOf(pe[1],pe[4])},null);
 }
+const b64=u=>{let t='';for(let i=0;i<u.length;i+=8192)t+=String.fromCharCode(...u.subarray(i,i+8192));return btoa(t)};
+const unb64=t=>Uint8Array.from(atob(t),c=>c.charCodeAt(0));
+async function pack(e){
+  const j=JSON.stringify({n:e.n,st:e.st,s:e.s,p:e.p,a:e.a,d:e.d,ev:e.ev});
+  if(typeof CompressionStream==='undefined')return 'TTP0:'+b64(new TextEncoder().encode(j));
+  const z=new Blob([j]).stream().pipeThrough(new CompressionStream('deflate-raw'));
+  return 'TTP1:'+b64(new Uint8Array(await new Response(z).arrayBuffer()));
+}
+function validate(o){
+  const num=v=>typeof v==='number'&&isFinite(v),int=(v,a,b)=>Number.isInteger(v)&&v>=a&&v<=b;
+  if(!o||typeof o.n!=='string'||!STL[o.st]||!Array.isArray(o.ev)||o.ev.length>100000)throw 0;
+  for(const e of o.ev){
+    if(!Array.isArray(e)||!num(e[0]))throw 0;
+    if(e.length===2){if(e[1]!=='L')throw 0}
+    else if(e.length!==5||typeof e[1]!=='string'||e[1].length!==1||!'IJLOSTZ'.includes(e[1])||!int(e[2],-5,15)||!int(e[3],-5,25)||!int(e[4],0,3))throw 0;
+  }
+  return{n:o.n.slice(0,60),st:o.st,s:num(o.s)?o.s:0,p:num(o.p)?o.p:0,a:num(o.a)?o.a:undefined,d:num(o.d)?o.d:Date.now(),ev:o.ev};
+}
+async function unpack(t){
+  t=t.trim();if(t.length>3e6)throw 0;
+  const m=t.slice(0,5),body=t.slice(5).replace(/\s+/g,'');let j;
+  if(m==='TTP0:')j=new TextDecoder().decode(unb64(body));
+  else if(m==='TTP1:')j=await new Response(new Blob([unb64(body)]).stream().pipeThrough(new DecompressionStream('deflate-raw'))).text();
+  else throw 0;
+  if(j.length>8e6)throw 0;
+  return validate(JSON.parse(j));
+}
+async function exportEntry(e){
+  try{
+    const t=await pack(e);$('histText').value=t;
+    try{await navigator.clipboard.writeText(t);toast('テキストを出力してコピーしました')}catch{$('histText').select();toast('テキストを出力しました（コピーしてください）')}
+  }catch{toast('出力に失敗しました')}
+}
+async function readImport(){try{return await unpack($('histText').value)}catch{toast('読み込めないテキストです');return null}}
+$('impReplay').onclick=async()=>{const e=await readImport();if(e)openReplay(e)};
+$('impPin').onclick=async()=>{
+  const e=await readImport();if(!e)return;
+  if(pins.length>=PIN_MAX)return toast('固定履歴が満杯です');
+  pins.push(e);store('ttpPins',pins);renderHist();toast('固定履歴に追加しました');
+};
+$('copyHist').onclick=()=>{const t=$('histText');t.select();(navigator.clipboard?navigator.clipboard.writeText(t.value):Promise.reject()).catch(()=>document.execCommand('copy')).then(()=>toast('コピーしました'))};
 $('histBtn').onclick=()=>setMode('hist');$('histClose').onclick=()=>setMode('game');$('repClose').onclick=()=>setMode('hist');
 $('repPlay').onclick=()=>{if(!rp)return;if(!rp.play&&rp.T>=rp.dur)rp.T=0;rp.play=!rp.play;rp.last=performance.now();$('repPlay').textContent=rp.play?'⏸':'▶'};
 $('repSp').onchange=e=>{if(rp)rp.sp=+e.target.value};
 $('repSeek').oninput=e=>{if(rp){rp.T=+e.target.value;rp.play=false;$('repPlay').textContent='▶'}};
 
 // ---------- 初期化 ----------
-renderEd();refreshUI();resetGame();loop();
+renderEd();refreshUI();resetGame();togglePause(true);loop();
 </script>
 </body>
 </html>
