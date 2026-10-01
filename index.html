@@ -1,853 +1,702 @@
 <!DOCTYPE html>
 <html lang="ja">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
-  <title>テトリス テンプレート練習機</title>
-  <style>
-    * { box-sizing: border-box; user-select: none; -webkit-user-select: none; }
-    body {
-      background: #121214; color: #fff;
-      font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-      margin: 0; padding: 10px;
-      display: flex; flex-direction: column; align-items: center; min-height: 100vh;
-    }
-    h1 { font-size: 1.1rem; margin: 0 0 8px; text-align: center; }
-    .view-section { width: 100%; max-width: 400px; display: flex; flex-direction: column; align-items: center; }
-    .hidden { display: none !important; }
-    .controls-panel {
-      margin-bottom: 8px; display: flex; gap: 6px; flex-wrap: wrap;
-      justify-content: center; align-items: center; width: 100%;
-    }
-    select, button, input, textarea {
-      background: #2a2a30; color: #fff; border: 1px solid #444;
-      padding: 6px 8px; border-radius: 4px; font-size: 0.85rem;
-    }
-    button { cursor: pointer; }
-    button:active { background: #444; }
-    .btn-edit { background: #3a3a50; border-color: #66a; }
-    .btn-pause { background: #5a4a20; border-color: #886020; }
-    .btn-pause.active { background: #205a20; border-color: #208820; }
-    .step-info {
-      background: #1e1e28; border: 1px solid #445; padding: 6px 10px;
-      border-radius: 4px; margin-bottom: 8px; font-size: 0.85rem;
-      width: 100%; text-align: center; color: #5cf; font-weight: bold;
-      transition: background 0.3s, color 0.3s;
-    }
-    .step-info.cleared { background: #1b4d2e; color: #7ef0a0; }
-    .game-container { display: flex; gap: 10px; justify-content: center; align-items: flex-start; position: relative; }
-    .side-panel { display: flex; flex-direction: column; gap: 8px; width: 66px; }
-    .preview-box { background: #1e1e24; border: 2px solid #333; border-radius: 4px; padding: 4px; text-align: center; }
-    .preview-title { font-size: 0.7rem; color: #aaa; margin-bottom: 2px; }
-    .canvas-wrapper { position: relative; width: 200px; height: 400px; }
-    canvas#mainCanvas { background: #000; border: 2px solid #333; border-radius: 4px; display: block; }
-    .pause-overlay {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background: rgba(0,0,0,0.75); border-radius: 4px;
-      display: flex; flex-direction: column; justify-content: center; align-items: center;
-      color: #fff; font-weight: bold; font-size: 1.4rem; letter-spacing: 2px;
-      backdrop-filter: blur(2px); z-index: 10;
-    }
-    .pause-overlay span { font-size: 0.75rem; color: #aaa; margin-top: 6px; font-weight: normal; letter-spacing: 0; }
-    .toast-message {
-      position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%);
-      background: rgba(10,30,20,0.92); border: 2px solid #5cf; color: #fff;
-      padding: 10px 18px; border-radius: 8px; font-size: 0.95rem; font-weight: bold;
-      text-align: center; pointer-events: none; opacity: 0; transition: opacity 0.3s;
-      z-index: 20; box-shadow: 0 4px 12px rgba(0,0,0,0.5); white-space: nowrap;
-    }
-    .toast-message.show { opacity: 1; }
-    .mobile-controls {
-      display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px;
-      margin-top: 10px; width: 100%;
-    }
-    .m-btn {
-      background: #2a2a35; border: 1px solid #444; color: white;
-      padding: 14px 0; text-align: center; border-radius: 6px;
-      font-size: 1rem; font-weight: bold; touch-action: manipulation;
-    }
-    .m-btn:active { background: #555; }
-    .editor-container, .settings-panel {
-      background: #1a1a20; border: 1px solid #333; border-radius: 8px;
-      padding: 14px; width: 100%; margin-top: 12px;
-    }
-    .editor-container h2, .settings-panel h3 {
-      margin: 0 0 10px; font-size: 1rem;
-      display: flex; justify-content: space-between; align-items: center;
-    }
-    .editor-container textarea {
-      width: 100%; height: 140px; font-family: monospace; font-size: 0.85rem;
-      resize: vertical; margin-bottom: 8px; user-select: text; -webkit-user-select: text;
-    }
-    .editor-container input[type="text"] { width: 100%; margin-bottom: 8px; user-select: text; -webkit-user-select: text; }
-    .row { display: flex; gap: 8px; justify-content: flex-end; margin-bottom: 10px; }
-    .hint {
-      font-size: 0.75rem; color: #aaa; margin-bottom: 8px; line-height: 1.4;
-      background: #22222a; padding: 8px; border-radius: 4px;
-    }
-    .saved-list { margin-top: 10px; font-size: 0.85rem; }
-    .saved-item { display: flex; justify-content: space-between; align-items: center; padding: 4px 0; border-bottom: 1px solid #333; }
-    .saved-item .btn-del { padding: 2px 6px; font-size: 0.75rem; background: #5a2020; border-color: #733; }
-    .settings-row { margin-bottom: 10px; font-size: 0.85rem; }
-    .settings-row label { display: block; margin-bottom: 4px; color: #ccc; }
-  </style>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>テトリス テンプレート練習機</title>
+<style>
+*{box-sizing:border-box;user-select:none;-webkit-user-select:none}
+body{background:#121214;color:#fff;font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",Roboto,sans-serif;margin:0;padding:10px;display:flex;flex-direction:column;align-items:center;min-height:100vh}
+h1{font-size:1.1rem;margin:0 0 8px;text-align:center}
+.view{width:100%;max-width:400px;display:flex;flex-direction:column;align-items:center}
+.hidden{display:none!important}
+.bar{display:flex;gap:6px;flex-wrap:wrap;justify-content:center;align-items:center;width:100%;margin-bottom:8px}
+select,button,input,textarea{background:#2a2a30;color:#fff;border:1px solid #444;padding:6px 8px;border-radius:4px;font-size:.85rem}
+button{cursor:pointer}button:active{background:#444}
+.alt{background:#3a3a50;border-color:#66a}
+.pause{background:#5a4a20;border-color:#886020}.pause.on{background:#205a20;border-color:#208820}
+.ok{background:#2a5a2a}
+.info{background:#1e1e28;border:1px solid #445;padding:6px 10px;border-radius:4px;margin-bottom:8px;font-size:.85rem;width:100%;text-align:center;color:#5cf;font-weight:bold;transition:.3s}
+.info.ok{background:#1b4d2e;color:#7ef0a0}
+.game{display:flex;gap:10px;justify-content:center;align-items:flex-start}
+.side{display:flex;flex-direction:column;gap:8px;width:66px}
+.pv{background:#1e1e24;border:2px solid #333;border-radius:4px;padding:4px;text-align:center}
+.pv div{font-size:.7rem;color:#aaa;margin-bottom:2px}
+.cw{position:relative;width:200px;height:400px}
+#mainCanvas{background:#000;border:2px solid #333;border-radius:4px;display:block}
+#pauseOv{position:absolute;inset:0;background:rgba(0,0,0,.75);display:flex;flex-direction:column;justify-content:center;align-items:center;font-weight:bold;font-size:1.4rem;letter-spacing:2px;z-index:10}
+#pauseOv span{font-size:.75rem;color:#aaa;margin-top:6px;font-weight:normal;letter-spacing:0}
+#toast{position:fixed;top:18%;left:50%;transform:translateX(-50%);background:rgba(10,30,20,.92);border:2px solid #5cf;padding:10px 18px;border-radius:8px;font-weight:bold;text-align:center;pointer-events:none;opacity:0;transition:opacity .3s;z-index:2000;white-space:pre}
+#toast.show{opacity:1}
+.mc{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin-top:10px;width:100%}
+.mb{background:#2a2a35;border:1px solid #444;padding:14px 0;text-align:center;border-radius:6px;font-weight:bold;touch-action:manipulation}
+.mb:active{background:#555}
+.panel{background:#1a1a20;border:1px solid #333;border-radius:8px;padding:14px;width:100%;margin-top:12px}
+.panel h2{margin:0 0 10px;font-size:1rem;display:flex;justify-content:space-between;align-items:center}
+.hint{font-size:.75rem;color:#aaa;margin-bottom:8px;line-height:1.5;background:#22222a;padding:8px;border-radius:4px}
+.row{margin-bottom:10px;font-size:.85rem}.row label{display:block;margin-bottom:4px;color:#ccc}
+textarea,input[type=text]{width:100%;user-select:text;-webkit-user-select:text;margin-bottom:8px}
+textarea{height:130px;font-family:monospace;resize:vertical}
+#palette{display:flex;flex-wrap:wrap;gap:4px;justify-content:center;background:#252538;padding:6px;border-radius:8px;margin-bottom:8px}
+.card{display:flex;flex-direction:column;align-items:center;gap:2px;padding:4px 5px;border:1px solid #45475a;border-radius:6px;background:#181825;touch-action:none;cursor:pointer}
+.steps{display:flex;gap:4px;flex-wrap:wrap;justify-content:center;margin-bottom:8px}
+.steps .on{background:#89b4fa;color:#111;border-color:#89b4fa}
+.ba{display:flex;align-items:flex-end;justify-content:center;gap:6px;margin-bottom:8px}
+#egrid{display:grid;grid-template-columns:repeat(10,24px);grid-template-rows:repeat(16,24px);background:#181825;padding:3px;border-radius:6px}
+.cell{width:24px;height:24px;display:flex;align-items:center;justify-content:center;font:bold 11px monospace;touch-action:none;cursor:pointer}
+.cell.ok{outline:2px solid #89b4fa;outline-offset:-2px;background-image:none}
+.cell.bad{outline:2px solid #f38ba8;outline-offset:-2px}
+#trash{width:44px;height:80px;background:#313244;border:2px dashed #f38ba8;border-radius:6px;display:flex;flex-direction:column;align-items:center;justify-content:center;color:#f38ba8;font-size:16px}
+#trash span{font-size:8px}#trash.ok{background:#f38ba8;color:#11111b}
+#ghost{position:fixed;pointer-events:none;z-index:1000;opacity:.85;display:none}
+.item{display:flex;gap:4px;align-items:center;padding:4px 0;border-bottom:1px solid #333;font-size:.85rem}
+.item span{flex:1;overflow:hidden;text-overflow:ellipsis}
+.item button{padding:2px 8px;font-size:.75rem}.item .del{background:#5a2020;border-color:#733}.item small{display:block;color:#888}.hh{font-size:.85rem;margin:12px 0 4px;color:#9cf;font-weight:bold}#repCanvas{background:#000;border:2px solid #333;border-radius:4px;display:block}
+.dim{color:#666}.bd{margin-left:6px;padding:1px 6px;border-radius:4px;font-size:.75rem;font-weight:bold;background:#5a4a20;color:#fc6}input[type=number]{width:100px;user-select:text;-webkit-user-select:text}
+</style>
 </head>
 <body>
-  <h1>テトリス テンプレート練習機</h1>
+<h1>テトリス テンプレート練習機</h1>
+<div id="toast"></div><div id="ghost"></div>
 
-  <div id="gameView" class="view-section">
-    <div class="controls-panel">
-      <label>テンプレ:
-        <select id="templateSelect">
-          <option value="none">フリー（なし）</option>
-          <option value="TSD_OPENING">開幕TSD</option>
-          <option value="TKI3">TKI3</option>
-        </select>
-      </label>
-      <button id="mirrorBtn">反転: OFF</button>
-      <button id="pauseBtn" class="btn-pause">⏸ 一時停止</button>
-      <button id="resetBtn">リセット</button>
-      <button id="openEditorBtn" class="btn-edit">⚙ 編集</button>
-      <button id="openSettingsBtn" class="btn-edit">設定</button>
-    </div>
-
-    <div class="step-info" id="stepDisplay">フリー練習モード</div>
-
-    <div class="game-container">
-      <div class="side-panel">
-        <div class="preview-box">
-          <div class="preview-title">HOLD</div>
-          <canvas id="holdCanvas" width="58" height="58"></canvas>
-        </div>
-      </div>
-      <div class="canvas-wrapper">
-        <canvas id="mainCanvas" width="200" height="400"></canvas>
-        <div id="pauseOverlay" class="pause-overlay hidden">
-          PAUSED
-          <span>Pキー または 一時停止ボタンで解除</span>
-        </div>
-        <div id="toastMessage" class="toast-message"></div>
-      </div>
-      <div class="side-panel">
-        <div class="preview-box">
-          <div class="preview-title">NEXT</div>
-          <canvas id="nextCanvas" width="58" height="180"></canvas>
-        </div>
-      </div>
-    </div>
-
-    <div class="mobile-controls">
-      <div class="m-btn" id="btnHold">HOLD</div>
-      <div class="m-btn" id="btnRotCCW">↺</div>
-      <div class="m-btn" id="btnRotCW">↻</div>
-      <div class="m-btn" id="btnHardDrop">DROP</div>
-      <div class="m-btn" id="btnLeft">←</div>
-      <div class="m-btn" id="btnDown">↓</div>
-      <div class="m-btn" id="btnRight">→</div>
-      <div class="m-btn" id="btnPauseMobile">⏸</div>
-    </div>
+<div id="gameView" class="view">
+  <div class="bar">
+    <select id="tplSel"><option value="none">フリー（テンプレなし）</option></select>
+    <select id="modeSel">
+      <option value="free">発火後は通常プレイ</option>
+      <option value="done">完成で終了</option>
+      <option value="fire">完成→発火で終了</option>
+    </select>
   </div>
-
-  <!-- 設定画面 -->
-  <div id="settingsView" class="view-section hidden">
-    <div class="settings-panel">
-      <h3>
-        <span>設定</span>
-        <button id="closeSettingsBtn">✕ 戻る</button>
-      </h3>
-      <div class="settings-row">
-        <label>ツモ設定</label>
-        <select id="bagModeSelect">
-          <option value="normal">普通の7-bag（実戦向け）</option>
-          <option value="fixed">順番固定（形の練習向け）</option>
-        </select>
-      </div>
-      <div class="settings-row">
-        <label>左右反転</label>
-        <select id="mirrorModeSelect">
-          <option value="manual">手動</option>
-          <option value="auto">自動判定（下段ミノが3個以内）</option>
-        </select>
-      </div>
-    </div>
+  <div class="bar">
+    <button id="mirrorBtn">反転: OFF</button>
+    <button id="pauseBtn" class="pause">⏸ 一時停止</button>
+    <button id="resetBtn">リセット</button>
+    <button id="edBtn" class="alt">テンプレ作成</button>
+    <button id="setBtn" class="alt">設定</button>
+    <button id="histBtn" class="alt">履歴</button>
   </div>
-
-  <!-- 編集画面 -->
-  <div id="editorView" class="view-section hidden">
-    <div class="editor-container">
-      <h2>
-        <span>ステップ対応 テンプレ作成</span>
-        <button id="closeEditorBtn">✕ ゲームに戻る</button>
-      </h2>
-      <div class="hint">
-        ・下から上に向かって記述（1行10文字）<br>
-        ・. = 空白 / I J L O S T Z = ミノ / X = 任意ブロック<br>
-        ・ステップ区切りは ---
-      </div>
-      <input type="text" id="templateName" placeholder="テンプレ名">
-      <textarea id="templateText" placeholder="L........O&#10;L..IIII..O&#10;---&#10;L........O"></textarea>
-      <div class="row">
-        <button id="saveTemplateBtn" style="background:#2a5a2a;">保存する</button>
-      </div>
-      <div class="saved-list">
-        <strong>作成したテンプレ一覧</strong>
-        <div id="savedList" style="margin-top:6px;"></div>
-      </div>
+  <div class="info" id="info"></div>
+  <div class="bar"><button id="sbComplete" class="alt hidden">📌 完成後を固定</button><button id="sbFire" class="alt hidden">📌 発火後を固定</button><button id="sbOver" class="alt hidden">📌 発火→GO後を固定</button></div>
+  <div class="game">
+    <div class="side"><div class="pv"><div>HOLD</div><canvas id="holdCanvas" width="58" height="58"></canvas></div></div>
+    <div class="cw">
+      <canvas id="mainCanvas" width="200" height="400"></canvas>
+      <div id="pauseOv" class="hidden">PAUSED<span>Pキー または 一時停止ボタンで解除</span></div>
     </div>
+    <div class="side"><div class="pv"><div>NEXT</div><canvas id="nextCanvas" width="58" height="290"></canvas></div></div>
   </div>
+  <div class="mc">
+    <div class="mb" id="bHold">HOLD</div><div class="mb" id="bCCW">↺</div><div class="mb" id="bCW">↻</div><div class="mb" id="bDrop">DROP</div>
+    <div class="mb" id="bL">←</div><div class="mb" id="bD">↓</div><div class="mb" id="bR">→</div><div class="mb" id="bP">⏸</div>
+  </div>
+  <div class="panel" style="margin-top:10px;padding:8px"><b id="atkTotal">送信ライン計 0</b><span id="stB2b" class="bd hidden">B2B</span><span id="stRen" class="bd hidden"></span><div id="atkLog" style="font-size:.78rem;color:#aaa;margin-top:4px;line-height:1.5"></div></div>
+</div>
+
+<div id="setView" class="view hidden">
+  <div class="panel">
+    <h2><span>設定</span><button id="setClose">✕ 戻る</button></h2>
+    <div class="row"><label>お手本ガイド（テンプレ練習時の半透明表示）</label>
+      <select id="guideSel"><option value="gray">薄灰色</option><option value="color">色付き</option><option value="off">表示しない（暗記テスト）</option></select></div>
+    <div class="row"><label>DAS（長押しで連続移動が始まるまで, ms）</label><input type="number" id="dasIn" min="0" max="500"></div>
+    <div class="row"><label>ARR（連続移動の間隔, ms / 0=瞬間移動）</label><input type="number" id="arrIn" min="0" max="200"></div>
+    <div class="row"><label>ソフトドロップ間隔（ms / 0=瞬間）</label><input type="number" id="sdIn" min="0" max="500"></div>
+    <div class="row"><label>落下間隔（ms / 0=自然落下なし）</label><input type="number" id="gravIn" min="0" max="5000"></div>
+    <div class="row"><label>ロック遅延（ms）</label><input type="number" id="lockIn" min="0" max="3000"></div>
+    <div class="row"><label>左右反転</label>
+      <select id="mirrorSel"><option value="manual">手動</option><option value="auto">自動判定（最下段のミノが先頭付近に無ければ反転）</option></select></div>
+  </div>
+</div>
+
+<div id="histView" class="view hidden"><div class="panel">
+    <h2><span>履歴</span><button id="histClose">✕ 戻る</button></h2>
+    <div class="hint">自動履歴: 完成したテンプレを新しい順に5件まで保存（6件目で古いものから消えます）。<br>固定履歴: 自動では更新されず、5件まで手動で保存・削除できます。ゲーム画面の「📌」ボタン（完成後／発火後／発火→ゲームオーバー後）か、自動履歴の「固定」から保存します。</div>
+    <div class="hh">自動履歴（最新5件）</div><div id="histAuto"></div>
+    <div class="hh">固定履歴 <span id="pinCnt"></span></div><div id="histPins"></div>
+  </div></div>
+<div id="repView" class="view hidden"><div class="panel">
+    <h2><span id="repTitle">リプレイ</span><button id="repClose">✕ 履歴へ</button></h2>
+    <div style="display:flex;justify-content:center"><canvas id="repCanvas" width="200" height="400"></canvas></div>
+    <input type="range" id="repSeek" min="0" max="1000" value="0" style="width:100%;margin:8px 0;padding:0">
+    <div class="bar"><button id="repPlay">⏸</button><select id="repSp"><option value="1">1x</option><option value="2">2x</option><option value="4">4x</option><option value="0.5">0.5x</option></select><span id="repTime" class="dim"></span></div>
+  </div></div>
+
+<div id="edView" class="view hidden">
+  <div class="panel">
+    <h2><span>テンプレ作成</span><button id="edClose">✕ ゲームに戻る</button></h2>
+    <div class="hint">ミノをドラッグして配置 / タップで回転 / ゴミ箱へドラッグで削除。<br>
+      ステップごとに盤面を作り、最終ステップが完成形です。ステップ追加は直前の盤面を複製します。<br>
+      テキスト形式: 1行10文字、<b>.</b>=空白、IJLOSTZ=ミノ、X=任意ブロック、最終行が最下段、<b>---</b>でステップ区切り。テキストを直接編集したら「テキスト読み込み」を押してください。</div>
+    <div id="palette"></div>
+    <div class="steps" id="stepTabs"></div>
+    <div class="ba"><div id="egrid"></div><div id="trash">🗑<span>削除</span></div></div>
+    <div class="bar"><button id="addStep">＋ステップ追加</button><button id="delStep">ステップ削除</button><button id="clrBtn">全消去</button></div>
+    <textarea id="out" placeholder="「テキスト出力」でここに表示されます。貼り付けて「テキスト読み込み」も可能です。"></textarea>
+    <div class="bar"><button id="genBtn">テキスト出力</button><button id="loadBtn">テキスト読み込み</button><button id="copyBtn">コピー</button><button id="sampleBtn">例: 山岳積み2号</button></div>
+    <input type="text" id="name" placeholder="テンプレ名">
+    <div class="bar"><button id="saveBtn" class="ok">保存して練習</button></div>
+    <strong style="font-size:.85rem">保存済みテンプレ</strong>
+    <div id="savedList" style="margin-top:6px"></div>
+  </div>
+</div>
 
 <script>
-const COLS = 10, ROWS = 20, BLOCK_SIZE = 20;
-const COLORS = {
-  I:'#00f0f0', J:'#0000f0', L:'#f0a000', O:'#f0f000',
-  S:'#00f000', T:'#a000f0', Z:'#f00000', X:'#888888'
-};
-const SHAPES = {
-  I:[[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],
-  J:[[1,0,0],[1,1,1],[0,0,0]],
-  L:[[0,0,1],[1,1,1],[0,0,0]],
-  O:[[1,1],[1,1]],
-  S:[[0,1,1],[1,1,0],[0,0,0]],
-  T:[[0,1,0],[1,1,1],[0,0,0]],
-  Z:[[1,1,0],[0,1,1],[0,0,0]]
-};
-const KICK_TABLE_JLSTZ = {
-  '0-1':[[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]],
-  '1-0':[[0,0],[1,0],[1,-1],[0,2],[1,2]],
-  '1-2':[[0,0],[1,0],[1,-1],[0,2],[1,2]],
-  '2-1':[[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]],
-  '2-3':[[0,0],[1,0],[1,1],[0,-2],[1,-2]],
-  '3-2':[[0,0],[-1,0],[-1,-1],[0,2],[-1,2]],
-  '3-0':[[0,0],[-1,0],[-1,-1],[0,2],[-1,2]],
-  '0-3':[[0,0],[1,0],[1,1],[0,-2],[1,-2]]
-};
-const KICK_TABLE_I = {
-  '0-1':[[0,0],[-2,0],[1,0],[-2,-1],[1,2]],
-  '1-0':[[0,0],[2,0],[-1,0],[2,1],[-1,-2]],
-  '1-2':[[0,0],[-1,0],[2,0],[-1,2],[2,-1]],
-  '2-1':[[0,0],[1,0],[-2,0],[1,-2],[-2,1]],
-  '2-3':[[0,0],[2,0],[-1,0],[2,1],[-1,-2]],
-  '3-2':[[0,0],[-2,0],[1,0],[-2,-1],[1,2]],
-  '3-0':[[0,0],[1,0],[-2,0],[1,-2],[-2,1]],
-  '0-3':[[0,0],[-1,0],[2,0],[-1,2],[2,-1]]
-};
+const $=id=>document.getElementById(id);
+const COLS=10,ROWS=20,B=20;
+const COLORS={I:'#00f0f0',J:'#0000f0',L:'#f0a000',O:'#f0f000',S:'#00f000',T:'#a000f0',Z:'#f00000',X:'#888888'};
+const GRAY='#c8c8cd';
+const SHAPES={I:[[0,0,0,0],[1,1,1,1],[0,0,0,0],[0,0,0,0]],J:[[1,0,0],[1,1,1],[0,0,0]],L:[[0,0,1],[1,1,1],[0,0,0]],O:[[1,1],[1,1]],S:[[0,1,1],[1,1,0],[0,0,0]],T:[[0,1,0],[1,1,1],[0,0,0]],Z:[[1,1,0],[0,1,1],[0,0,0]]};
+const KJ={'0-1':[[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]],'1-0':[[0,0],[1,0],[1,-1],[0,2],[1,2]],'1-2':[[0,0],[1,0],[1,-1],[0,2],[1,2]],'2-1':[[0,0],[-1,0],[-1,1],[0,-2],[-1,-2]],'2-3':[[0,0],[1,0],[1,1],[0,-2],[1,-2]],'3-2':[[0,0],[-1,0],[-1,-1],[0,2],[-1,2]],'3-0':[[0,0],[-1,0],[-1,-1],[0,2],[-1,2]],'0-3':[[0,0],[1,0],[1,1],[0,-2],[1,-2]]};
+const KI={'0-1':[[0,0],[-2,0],[1,0],[-2,-1],[1,2]],'1-0':[[0,0],[2,0],[-1,0],[2,1],[-1,-2]],'1-2':[[0,0],[-1,0],[2,0],[-1,2],[2,-1]],'2-1':[[0,0],[1,0],[-2,0],[1,-2],[-2,1]],'2-3':[[0,0],[2,0],[-1,0],[2,1],[-1,-2]],'3-2':[[0,0],[-2,0],[1,0],[-2,-1],[1,2]],'3-0':[[0,0],[1,0],[-2,0],[1,-2],[-2,1]],'0-3':[[0,0],[-1,0],[2,0],[-1,2],[2,-1]]};
+const SAMPLE=`......ZZ..
+.......ZZ.
+I..J..LLOO
+IJJJ...LOO
+IJJJSS.LZI
+IJTSS..ZZI
+OOTTSS.ZLI
+OOTSS.LLLI`;
 
-const BUILTIN_TEMPLATES = {
-  none: { sequence: null, steps: [[]] },
-  TSD_OPENING: {
-    sequence: ['I','L','O','S','Z','J','T'],
-    steps: [
-      [
-        {x:0,y:19,type:'L'},{x:0,y:18,type:'L'},{x:0,y:17,type:'L'},{x:1,y:17,type:'L'},
-        {x:3,y:19,type:'I'},{x:4,y:19,type:'I'},{x:5,y:19,type:'I'},{x:6,y:19,type:'I'},
-        {x:3,y:18,type:'S'},{x:4,y:18,type:'S'},{x:2,y:18,type:'S'},{x:3,y:17,type:'S'},
-        {x:4,y:17,type:'Z'},{x:5,y:17,type:'Z'},{x:5,y:18,type:'Z'},{x:6,y:18,type:'Z'},
-        {x:6,y:17,type:'J'},{x:7,y:17,type:'J'},{x:8,y:17,type:'J'},{x:8,y:18,type:'J'},
-        {x:8,y:19,type:'O'},{x:9,y:19,type:'O'},{x:8,y:18,type:'O'},{x:9,y:18,type:'O'}
-      ],
-      [
-        {x:0,y:19,type:'L'},{x:0,y:18,type:'L'},{x:6,y:18,type:'J'},
-        {x:8,y:18,type:'O'},{x:9,y:18,type:'O'},{x:8,y:19,type:'O'},{x:9,y:19,type:'O'}
-      ]
-    ]
-  },
-  TKI3: {
-    sequence: ['J','L','I','O','S','Z','T'],
-    steps: [
-      [
-        {x:0,y:19,type:'J'},{x:0,y:18,type:'J'},{x:0,y:17,type:'J'},{x:1,y:17,type:'J'},
-        {x:2,y:19,type:'L'},{x:3,y:19,type:'L'},{x:4,y:19,type:'L'},{x:4,y:18,type:'L'},
-        {x:1,y:18,type:'I'},{x:2,y:18,type:'I'},{x:3,y:18,type:'I'},{x:4,y:18,type:'I'},
-        {x:7,y:19,type:'O'},{x:8,y:19,type:'O'},{x:7,y:18,type:'O'},{x:8,y:18,type:'O'},
-        {x:5,y:19,type:'S'},{x:6,y:19,type:'S'},{x:6,y:18,type:'S'},{x:7,y:18,type:'S'},
-        {x:8,y:17,type:'Z'},{x:9,y:17,type:'Z'},{x:7,y:17,type:'Z'},{x:8,y:18,type:'Z'}
-      ],
-      [
-        {x:0,y:19,type:'J'},{x:7,y:19,type:'O'},{x:8,y:19,type:'O'}
-      ]
-    ]
-  }
-};
+// ---------- 状態 ----------
+let S={guide:'gray',mirror:'manual',mode:'free',das:150,arr:30,sd:30,grav:1000,lock:500};
+let tpls={},hist=[],pins=[];
+try{Object.assign(S,JSON.parse(localStorage.getItem('ttpSettings')||'{}'));tpls=JSON.parse(localStorage.getItem('ttpTemplates')||'{}');hist=JSON.parse(localStorage.getItem('ttpHist')||'[]');pins=JSON.parse(localStorage.getItem('ttpPins')||'[]')}catch{}
+if(!['gray','color','off'].includes(S.guide))S.guide='gray';
+const saveS=()=>{try{localStorage.setItem('ttpSettings',JSON.stringify(S))}catch{}};
+let curMode='game',isPaused=false,pauseStart=0,toastT,endT,lockT=null,lockCnt=0;
+let board,cur,hold,canHold,nextQ,bag,steps=[[]],stepI,mirrored,phase,ended,placed,t0,curKey='none',ev=[],snaps={},fired=false,lastRot=false,lastKick=0;
+let lastDrop=Date.now();
+const ctx=$('mainCanvas').getContext('2d'),holdCtx=$('holdCanvas').getContext('2d'),nextCtx=$('nextCanvas').getContext('2d');
 
-let currentMode = 'game';
-let isPaused = false;
-let board = Array.from({length:ROWS},()=>Array(COLS).fill(null));
-let currentPiece = null, holdPiece = null, canHold = true;
-let nextQueue = [], bag = [];
-let currentTemplateKey = 'none', currentStepIndex = 0;
-let isMirrored = false;
-let lockTimer = null, lockResetCount = 0;
-const MAX_LOCK_RESETS = 15, LOCK_DELAY = 500;
-let bagMode = 'normal';      // 'normal' | 'fixed'
-let mirrorMode = 'manual';   // 'manual' | 'auto'
-let userTemplates = {};
-let toastTimer = null;
-let lastDropTime = Date.now();
-const DROP_INTERVAL = 1000;
-
-const canvas = document.getElementById('mainCanvas');
-const ctx = canvas.getContext('2d');
-const holdCtx = document.getElementById('holdCanvas').getContext('2d');
-const nextCtx = document.getElementById('nextCanvas').getContext('2d');
-
-// ---------- ユーティリティ ----------
-function showToast(msg) {
-  const t = document.getElementById('toastMessage');
-  t.innerText = msg;
-  t.classList.add('show');
-  clearTimeout(toastTimer);
-  toastTimer = setTimeout(()=>t.classList.remove('show'), 2200);
+function toast(m){const t=$('toast');t.textContent=m;t.classList.add('show');clearTimeout(toastT);toastT=setTimeout(()=>t.classList.remove('show'),2200)}
+function flash(){const i=$('info');i.classList.add('ok');setTimeout(()=>i.classList.remove('ok'),800)}
+function setMode(m){curMode=m;[['gameView','game'],['edView','edit'],['setView','set'],['histView','hist'],['repView','rep']].forEach(([i,k])=>$(i).classList.toggle('hidden',m!==k));if(m==='hist')renderHist();togglePause(m!=='game')}
+function togglePause(force){
+  if(curMode!=='game'&&force!==true)return;
+  const n=typeof force==='boolean'?force:!isPaused;
+  if(n===isPaused)return;
+  isPaused=n;
+  $('pauseBtn').textContent=n?'▶ 再開':'⏸ 一時停止';$('pauseBtn').classList.toggle('on',n);
+  $('pauseOv').classList.toggle('hidden',!n);
+  if(n){clearTimeout(lockT);lockT=null;pauseStart=Date.now()}
+  else{const d=Date.now()-pauseStart;lastDrop+=d;t0+=d;if(cur&&!ended&&hit(cur.x,cur.y+1,cur.shape)&&!lockT)lockT=setTimeout(lockPiece,S.lock)}
 }
+const idle=()=>!cur||isPaused||ended;
+const nowT=()=>Date.now()-t0;
+function rec(){if(cur&&!ended)ev.push([nowT(),cur.type,cur.x,cur.y,cur.rotation])}
+const store=(k,v)=>{try{localStorage.setItem(k,JSON.stringify(v))}catch{toast('保存に失敗しました（容量不足）')}};
+const mx=x=>mirrored?COLS-1-x:x;
 
-function setMode(mode) {
-  currentMode = mode;
-  document.getElementById('gameView').classList.toggle('hidden', mode !== 'game');
-  document.getElementById('editorView').classList.toggle('hidden', mode !== 'editor');
-  document.getElementById('settingsView').classList.toggle('hidden', mode !== 'settings');
-  if (mode === 'editor' || mode === 'settings') togglePause(true);
+// ---------- テンプレ解析 ----------
+function parseSteps(text){
+  return text.split(/^\s*---\s*$/m).map(p=>{
+    const lines=p.split('\n').map(l=>l.trim()).filter(Boolean).slice(-ROWS),bl=[];
+    lines.forEach((line,i)=>{const y=ROWS-lines.length+i;[...line].slice(0,COLS).forEach((ch,x)=>{ch=ch.toUpperCase();if('IJLOSTZX'.includes(ch))bl.push({x,y,type:ch})})});
+    return bl}).filter(b=>b.length);
 }
-
-let pauseStartTime = 0; // 一時停止を開始した時刻を記録する変数
-
-function togglePause(force) {
-  if (currentMode !== 'game' && force !== true) return;
-  isPaused = (typeof force === 'boolean') ? force : !isPaused;
-  const btn = document.getElementById('pauseBtn');
-  const ov = document.getElementById('pauseOverlay');
-  
-  if (isPaused) {
-    btn.innerText = '▶ 再開'; btn.classList.add('active');
-    ov.classList.remove('hidden');
-    clearTimeout(lockTimer); lockTimer = null;
-    pauseStartTime = Date.now(); // ★ 一時停止を開始した時刻を記録
-  } else {
-    btn.innerText = '⏸ 一時停止'; btn.classList.remove('active');
-    ov.classList.add('hidden');
-    
-    // ★ ポーズしていた時間分だけ lastDropTime を加算してずらす
-    // （これにより、ポーズ前に経過していたカウント分がそのまま再開後に維持される）
-    if (pauseStartTime > 0) {
-      lastDropTime += (Date.now() - pauseStartTime);
-      pauseStartTime = 0;
-    }
-  }
-}
-
-// ---------- テンプレ管理 ----------
-function loadUserTemplates() {
-  try {
-    userTemplates = JSON.parse(localStorage.getItem('tetrisUserTemplatesFinal') || '{}');
-  } catch { userTemplates = {}; }
-  refreshTemplateSelect();
-  renderSavedList();
-}
-function saveUserTemplates() {
-  localStorage.setItem('tetrisUserTemplatesFinal', JSON.stringify(userTemplates));
-  refreshTemplateSelect();
-  renderSavedList();
-}
-function refreshTemplateSelect() {
-  const sel = document.getElementById('templateSelect');
-  const cur = sel.value;
-  while (sel.options.length > 3) sel.remove(3);
-  Object.keys(userTemplates).forEach(name => {
-    const o = document.createElement('option');
-    o.value = 'user:' + name;
-    o.textContent = name + ' (自作)';
-    sel.appendChild(o);
-  });
-  if ([...sel.options].some(o => o.value === cur)) sel.value = cur;
-}
-function renderSavedList() {
-  const list = document.getElementById('savedList');
-  list.innerHTML = '';
-  const names = Object.keys(userTemplates);
-  if (!names.length) {
-    list.innerHTML = '<div style="color:#666;">保存されたテンプレはありません</div>';
-    return;
-  }
-  names.forEach(name => {
-    const div = document.createElement('div');
-    div.className = 'saved-item';
-    div.innerHTML = `<span>${name}</span>`;
-    const btn = document.createElement('button');
-    btn.className = 'btn-del'; btn.textContent = '削除';
-    btn.onclick = () => {
-      if (confirm(`「${name}」を削除しますか？`)) {
-        delete userTemplates[name];
-        saveUserTemplates();
-        if (currentTemplateKey === 'user:' + name) {
-          currentTemplateKey = 'none';
-          document.getElementById('templateSelect').value = 'none';
-        }
-      }
-    };
-    div.appendChild(btn);
-    list.appendChild(div);
-  });
-}
-
-function parseMultiStepTemplateText(text) {
-  const parts = text.split(/^---$/m);
-  const steps = [];
-  parts.forEach(p => {
-    const lines = p.trim().split('\n').map(l => l.trim()).filter(Boolean);
-    if (!lines.length) return;
-    const blocks = [];
-    for (let i = 0; i < lines.length; i++) {
-      const line = lines[lines.length - 1 - i];
-      const y = 19 - i;
-      if (y < 0) break;
-      for (let x = 0; x < Math.min(10, line.length); x++) {
-        const ch = line[x].toUpperCase();
-        if ('IJLOSTZX'.includes(ch)) blocks.push({x, y, type: ch});
-      }
-    }
-    if (blocks.length) steps.push(blocks);
-  });
-  return steps;
-}
-
-function getTemplateData() {
-  if (currentTemplateKey.startsWith('user:')) {
-    const name = currentTemplateKey.slice(5);
-    return { sequence: null, steps: userTemplates[name] || [[]] };
-  }
-  return BUILTIN_TEMPLATES[currentTemplateKey] || { sequence: null, steps: [[]] };
-}
-
-function updateStepDisplay() {
-  const data = getTemplateData();
-  const el = document.getElementById('stepDisplay');
-  if (currentTemplateKey === 'none') el.innerText = 'フリー練習モード';
-  else el.innerText = `STEP ${currentStepIndex + 1} / ${data.steps.length}`;
-}
-
-// ---------- 下段ミノ取得 & 自動反転判定 ----------
-function getBottomPieces(stepBlocks) {
-  const set = new Set();
-  stepBlocks.forEach(b => { if (b.y === 19) set.add(b.type); });
-  return [...set];
-}
-
-function autoMirrorCheck() {
-  if (mirrorMode !== 'auto' || currentTemplateKey === 'none') return;
-  const data = getTemplateData();
-  const step = data.steps[currentStepIndex] || [];
-  const bottom = getBottomPieces(step);
-  if (!bottom.length) return;
-
-  // NEXT先頭3個 + HOLD を見る
-  const upcoming = [];
-  if (holdPiece) upcoming.push(holdPiece);
-  for (let i = 0; i < Math.min(3, nextQueue.length); i++) upcoming.push(nextQueue[i]);
-  if (currentPiece) upcoming.unshift(currentPiece.type);
-
-  const hasBottom = bottom.some(p => upcoming.includes(p));
-  if (!hasBottom && !isMirrored) {
-    isMirrored = true;
-    document.getElementById('mirrorBtn').innerText = '反転: ON';
-    showToast('自動反転ON');
-  } else if (hasBottom && isMirrored) {
-    // 既に反転していて下段ミノが来るなら戻してもよいが、今回は維持
-  }
+function updInfo(){
+  let t;
+  if(curKey==='none')t='フリー練習';
+  else if(phase==='build')t=`STEP ${stepI+1} / ${steps.length}`;
+  else if(phase==='fire')t='完成！ ライン消去で発火';
+  else t='発火済み：通常プレイ';
+  $('info').textContent=t;
 }
 
 // ---------- ゲームロジック ----------
-function generateBag() {
-  const p = ['I','J','L','O','S','T','Z'];
-  for (let i = p.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [p[i], p[j]] = [p[j], p[i]];
-  }
-  return p;
+function fillQ(){while(nextQ.length<5){if(!bag.length){bag=['I','J','L','O','S','T','Z'];for(let i=6;i>0;i--){const j=Math.floor(Math.random()*(i+1));[bag[i],bag[j]]=[bag[j],bag[i]]}}nextQ.push(bag.shift())}}
+class Piece{constructor(t){this.type=t;this.shape=SHAPES[t].map(r=>[...r]);this.rotation=0;this.x=Math.floor((COLS-this.shape[0].length)/2);this.y=0}}
+function autoMirror(){
+  if(S.mirror!=='auto'||curKey==='none'||placed>0||mirrored)return;
+  const bottom=new Set((steps[stepI]||[]).filter(b=>b.y===ROWS-1).map(b=>b.type));
+  if(!bottom.size)return;
+  const up=[cur.type,...(hold?[hold]:[]),...nextQ.slice(0,3)];
+  if(![...bottom].some(p=>up.includes(p))){mirrored=true;$('mirrorBtn').textContent='反転: ON';toast('自動反転ON')}
 }
-function refillBagIfNeeded() {
-  if (bag.length === 0) bag = generateBag();
+function spawn(){
+  if(ended){cur=null;return}
+  fillQ();cur=new Piece(nextQ.shift());fillQ();
+  canHold=true;lockCnt=0;lastRot=false;clearTimeout(lockT);lockT=null;
+  autoMirror();
+  if(hit(cur.x,cur.y,cur.shape)){
+    if(fired){ended=true;cur=null;snap('over');$('info').textContent=`ゲームオーバー ${(nowT()/1000).toFixed(1)}秒（リセットで再開）`;toast('ゲームオーバー');return}
+    resetGame();return}
+  rec();
 }
-function getNextPiece() {
-  while (nextQueue.length < 5) {
-    refillBagIfNeeded();
-    nextQueue.push(bag.shift());
-  }
-  return nextQueue.shift();
-}
-
-class Piece {
-  constructor(type) {
-    this.type = type;
-    this.shape = SHAPES[type].map(r => [...r]);
-    this.color = COLORS[type];
-    this.rotation = 0;
-    this.x = Math.floor((COLS - this.shape[0].length) / 2);
-    this.y = 0;
-  }
-}
-
-function spawnPiece() {
-  const type = getNextPiece();
-  currentPiece = new Piece(type);
-  canHold = true;
-  lockResetCount = 0;
-  clearTimeout(lockTimer); lockTimer = null;
-  autoMirrorCheck();
-  if (checkCollision(currentPiece.x, currentPiece.y, currentPiece.shape)) resetGame();
-}
-
-function checkCollision(px, py, shape) {
-  for (let r = 0; r < shape.length; r++) {
-    for (let c = 0; c < shape[r].length; c++) {
-      if (shape[r][c]) {
-        const nx = px + c, ny = py + r;
-        if (nx < 0 || nx >= COLS || ny >= ROWS) return true;
-        if (ny >= 0 && board[ny][nx]) return true;
-      }
-    }
-  }
+function hit(px,py,sh,brd=board){
+  for(let r=0;r<sh.length;r++)for(let c=0;c<sh[r].length;c++)if(sh[r][c]){
+    const x=px+c,y=py+r;
+    if(x<0||x>=COLS||y>=ROWS)return true;
+    if(y>=0&&brd[y][x])return true}
   return false;
 }
-
-function rotateMatrix(m, dir) {
-  const N = m.length;
-  const res = Array.from({length:N},()=>Array(N).fill(0));
-  for (let r = 0; r < N; r++) for (let c = 0; c < N; c++) {
-    if (dir === 1) res[c][N-1-r] = m[r][c];
-    else res[N-1-c][r] = m[r][c];
-  }
-  return res;
+const rotM=(m,d)=>{const N=m.length,o=Array.from({length:N},()=>Array(N).fill(0));for(let r=0;r<N;r++)for(let c=0;c<N;c++){if(d===1)o[c][N-1-r]=m[r][c];else o[N-1-c][r]=m[r][c]}return o};
+function rotate(d){
+  if(idle()||cur.type==='O')return;
+  const o=cur.rotation,n=(o+d+4)%4,sh=rotM(cur.shape,d),k=`${o}-${n}`,tb=(cur.type==='I'?KI:KJ)[k];
+  for(let ki=0;ki<tb.length;ki++){const[dx,dy]=tb[ki];if(!hit(cur.x+dx,cur.y-dy,sh)){cur.x+=dx;cur.y-=dy;cur.shape=sh;cur.rotation=n;lastRot=true;lastKick=ki;rec();lockReset();break}}
 }
-
-function rotatePiece(dir) {
-  if (!currentPiece || currentPiece.type === 'O' || isPaused) return;
-  const oldR = currentPiece.rotation;
-  const newR = (oldR + dir + 4) % 4;
-  const newShape = rotateMatrix(currentPiece.shape, dir);
-  const key = `${oldR}-${newR}`;
-  const table = currentPiece.type === 'I' ? KICK_TABLE_I[key] : KICK_TABLE_JLSTZ[key];
-  if (!table) return;
-  for (const [dx, dy] of table) {
-    if (!checkCollision(currentPiece.x + dx, currentPiece.y - dy, newShape)) {
-      currentPiece.x += dx;
-      currentPiece.y -= dy;
-      currentPiece.shape = newShape;
-      currentPiece.rotation = newR;
-      handleLockReset();
-      break;
-    }
-  }
-}
-
-function move(dx, dy) {
-  if (!currentPiece || isPaused) return false;
-  if (!checkCollision(currentPiece.x + dx, currentPiece.y + dy, currentPiece.shape)) {
-    currentPiece.x += dx;
-    currentPiece.y += dy;
-    if (dx !== 0) handleLockReset();
-    return true;
-  }
+function move(dx,dy){
+  if(idle())return false;
+  if(!hit(cur.x+dx,cur.y+dy,cur.shape)){cur.x+=dx;cur.y+=dy;lastRot=false;rec();if(dx)lockReset();if(dy&&hit(cur.x,cur.y+1,cur.shape)&&!lockT)lockT=setTimeout(lockPiece,S.lock);return true}
   return false;
 }
-
-function hardDrop() {
-  if (!currentPiece || isPaused) return;
-  while (move(0, 1)) {}
-  lockPiece();
+function hardDrop(){if(idle())return;let d=0;while(!hit(cur.x,cur.y+1,cur.shape)){cur.y++;d++}if(d)lastRot=false;rec();lockPiece()}
+function doHold(){
+  if(!canHold||idle())return;
+  clearTimeout(lockT);lockT=null;
+  const t=cur.type;
+  if(!hold){hold=t;spawn()}else{cur=new Piece(hold);hold=t;lastRot=false;rec()}
+  canHold=false;
+}
+function lockReset(){
+  if(idle())return;
+  if(hit(cur.x,cur.y+1,cur.shape)){if(lockCnt<15){lockCnt++;clearTimeout(lockT);lockT=setTimeout(lockPiece,S.lock)}}
+  else{clearTimeout(lockT);lockT=null}
+}
+function lockPiece(){
+  if(isPaused||ended||!cur)return;
+  clearTimeout(lockT);lockT=null;
+  cur.shape.forEach((row,r)=>row.forEach((v,c)=>{if(v){const y=cur.y+r,x=cur.x+c;if(y>=0&&y<ROWS)board[y][x]=cur.type}}));
+  placed++;ev.push([nowT(),'L']);
+  const ts=tSpin();
+  let cleared=0;
+  for(let r=ROWS-1;r>=0;r--)if(board[r].every(v=>v)){board.splice(r,1);board.unshift(Array(COLS).fill(null));cleared++;r++}
+  attack(cleared,ts);
+  if(phase==='fire'&&cleared)onFire();
+  else if(phase==='build')checkStep();
+  spawn();
+}
+function checkStep(){
+  if(curKey==='none')return;
+  const t=steps[stepI];let n=0;
+  board.forEach(r=>r.forEach(v=>{if(v)n++}));
+  if(n!==t.length||!t.every(b=>board[b.y][mx(b.x)]))return;
+  if(stepI<steps.length-1){stepI++;toast(`STEP ${stepI} CLEAR!`);updInfo();flash();return}
+  addHist();snap('complete');
+  if(S.mode==='done')finish('完成！');
+  else{phase='fire';toast('完成！ ライン消去で発火しよう');updInfo();flash()}
+}
+function onFire(){
+  fired=true;snap('fire');
+  if(S.mode==='fire')finish('発火成功！');
+  else{phase='free';toast('発火！ 以降は通常プレイ');updInfo();flash()}
+}
+function finish(m){
+  ended=true;
+  const s=((Date.now()-t0)/1000).toFixed(1);
+  toast(`${m}\n${s}秒 / ${placed}ミノ`);
+  $('info').textContent=`${m} ${s}秒 / ${placed}ミノ`;flash();
+  
+}
+function resetGame(){
+  clearTimeout(endT);
+  steps=curKey==='none'?[[]]:parseSteps(tpls[curKey]||'');
+  if(!steps.length){curKey='none';steps=[[]]}
+  board=Array.from({length:ROWS},()=>Array(COLS).fill(null));
+  hold=null;canHold=true;nextQ=[];bag=[];stepI=0;mirrored=false;ended=false;placed=0;t0=Date.now();
+  phase=curKey==='none'?'free':'build';
+  ev=[];snaps={};fired=false;atk=0;atkLog=[];ren=-1;b2b=false;updAtk();updSnapBtns();
+  $('mirrorBtn').textContent='反転: OFF';
+  togglePause(false);
+  spawn();updInfo();lastDrop=Date.now();
 }
 
-function doHold() {
-  if (!canHold || !currentPiece || isPaused) return;
-  clearTimeout(lockTimer); lockTimer = null;
-  const t = currentPiece.type;
-  if (!holdPiece) {
-    holdPiece = t;
-    spawnPiece();
-  } else {
-    currentPiece = new Piece(holdPiece);
-    holdPiece = t;
-  }
-  canHold = false;
+// ---------- 攻撃 ----------
+let atk=0,atkLog=[],ren=-1,b2b=false;
+const RENB=[0,1,1,1,2,2,3,3,4,4,4,4,4,5];
+function tSpin(){
+  if(cur.type!=='T'||!lastRot)return 'none';
+  const occ=(dx,dy)=>{const x=cur.x+dx,y=cur.y+dy;return x<0||x>=COLS||y>=ROWS||(y>=0&&!!board[y][x])};
+  const cs=[[0,0],[2,0],[0,2],[2,2]].map(([a,b])=>occ(a,b));
+  if(cs.filter(Boolean).length<3)return 'none';
+  const f=[[0,1],[1,3],[2,3],[0,2]][cur.rotation];
+  return (!(cs[f[0]]&&cs[f[1]])&&lastKick!==4)?'mini':'full';
+}
+function attack(n,ts){
+  if(!n){ren=-1;updAtk();return}
+  ren++;
+  const elig=n===4||ts!=='none';
+  let nm,base;
+  if(ts==='mini'){nm='T-Spin Mini';base=[0,1]}
+  else if(ts==='full'){nm=['','TSS','TSD','TST'][n];base=[[0,2,4,6][n],[0,3,5,7][n]]}
+  else{nm=['','Single','Double','Triple','Tetris'][n];base=[[0,0,1,2,4][n],[0,0,1,2,5][n]]}
+  const useB=elig&&b2b,pc=board.every(r=>r.every(v=>!v));
+  let a=base[useB?1:0]+RENB[Math.min(ren,13)];
+  if(pc)a+=10;
+  b2b=elig;atk+=a;
+  atkLog=[`${nm}${useB?' B2B':''}${ren>0?` ${ren} REN`:''}${pc?' PERFECT CLEAR':''} → +${a}`,...atkLog].slice(0,8);
+  if(pc)toast('PERFECT CLEAR!');
+  updAtk();
+}
+function updAtk(){
+  $('atkTotal').textContent=`送信ライン計 ${atk}`;
+  $('stB2b').classList.toggle('hidden',!b2b);
+  $('stRen').classList.toggle('hidden',ren<1);$('stRen').textContent=`${ren} REN`;
+  const l=$('atkLog');l.innerHTML='';
+  atkLog.forEach((t,i)=>{const d=document.createElement('div');d.textContent=t;if(!i)d.style.color='#7ef0a0';if(t.includes('PERFECT'))d.style.color='#fc6';l.appendChild(d)});
 }
 
-function handleLockReset() {
-  if (isPaused) return;
-  const grounded = checkCollision(currentPiece.x, currentPiece.y + 1, currentPiece.shape);
-  if (grounded) {
-    if (lockResetCount < MAX_LOCK_RESETS) {
-      lockResetCount++;
-      clearTimeout(lockTimer);
-      lockTimer = setTimeout(lockPiece, LOCK_DELAY);
-    }
-  } else {
-    clearTimeout(lockTimer); lockTimer = null;
-  }
-}
-
-function checkStepCompletion() {
-  if (currentTemplateKey === 'none') return;
-  const data = getTemplateData();
-  const target = data.steps[currentStepIndex] || [];
-  if (!target.length) return;
-
-  let count = 0;
-  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) if (board[r][c]) count++;
-  if (count !== target.length) return;
-
-  let match = true;
-  for (const b of target) {
-    const tx = isMirrored ? (COLS - 1) - b.x : b.x;
-    if (!board[b.y][tx]) { match = false; break; }
-  }
-  if (!match) return;
-
-  const el = document.getElementById('stepDisplay');
-  el.classList.add('cleared');
-  setTimeout(() => el.classList.remove('cleared'), 800);
-
-  if (currentStepIndex < data.steps.length - 1) {
-    currentStepIndex++;
-    updateStepDisplay();
-    showToast(`🎉 STEP ${currentStepIndex} CLEAR!`);
-  } else {
-    showToast('✨ ALL STEPS CLEARED! ✨');
-    setTimeout(resetGame, 1200);
-  }
-}
-
-function lockPiece() {
-  if (isPaused) return;
-  clearTimeout(lockTimer); lockTimer = null;
-  for (let r = 0; r < currentPiece.shape.length; r++) {
-    for (let c = 0; c < currentPiece.shape[r].length; c++) {
-      if (currentPiece.shape[r][c]) {
-        const ry = currentPiece.y + r, rx = currentPiece.x + c;
-        if (ry >= 0 && ry < ROWS) board[ry][rx] = currentPiece.color;
-      }
-    }
-  }
-  for (let r = ROWS - 1; r >= 0; r--) {
-    if (board[r].every(c => c !== null)) {
-      board.splice(r, 1);
-      board.unshift(Array(COLS).fill(null));
-      r++;
-    }
-  }
-  checkStepCompletion();
-  spawnPiece();
-}
-
-function getGhostY() {
-  if (!currentPiece) return 0;
-  let gy = currentPiece.y;
-  while (!checkCollision(currentPiece.x, gy + 1, currentPiece.shape)) gy++;
-  return gy;
-}
+// ---------- 履歴の記録 ----------
+function snap(st){snaps[st]={n:curKey,st,s:+(nowT()/1000).toFixed(1),p:placed,a:atk,d:Date.now(),ev:ev.slice(),saved:false};updSnapBtns()}
+function updSnapBtns(){[['sbComplete','complete'],['sbFire','fire'],['sbOver','over']].forEach(([id,k])=>$(id).classList.toggle('hidden',!snaps[k]||snaps[k].saved))}
+function addHist(){hist.unshift({n:curKey,st:'complete',s:+(nowT()/1000).toFixed(1),p:placed,a:atk,d:Date.now(),ev:ev.slice()});hist=hist.slice(0,5);store('ttpHist',hist)}
+[['sbComplete','complete'],['sbFire','fire'],['sbOver','over']].forEach(([id,k])=>$(id).onclick=()=>{
+  const x=snaps[k];if(!x)return;
+  if(pins.length>=5)return toast('固定履歴が満杯です（履歴画面で削除してください）');
+  pins.push({...x,saved:undefined});x.saved=true;store('ttpPins',pins);updSnapBtns();toast('固定履歴に保存しました');
+});
 
 // ---------- 描画 ----------
-function drawBlock(c, x, y, color, a = 1) {
-  c.save(); c.globalAlpha = a; c.fillStyle = color;
-  c.fillRect(x * BLOCK_SIZE, y * BLOCK_SIZE, BLOCK_SIZE - 1, BLOCK_SIZE - 1);
-  c.restore();
-}
-
-function draw() {
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
-  const data = getTemplateData();
-  const step = data.steps[currentStepIndex] || [];
-  step.forEach(b => {
-    const tx = isMirrored ? (COLS - 1) - b.x : b.x;
-    drawBlock(ctx, tx, b.y, COLORS[b.type] || '#fff', 0.35);
-  });
-  for (let r = 0; r < ROWS; r++) for (let c = 0; c < COLS; c++) {
-    if (board[r][c]) drawBlock(ctx, c, r, board[r][c]);
+function blk(c,x,y,col,a=1){c.save();c.globalAlpha=a;c.fillStyle=col;c.fillRect(x*B,y*B,B-1,B-1);c.restore()}
+function mini(c,t,x0,y0,s){c.fillStyle=COLORS[t];SHAPES[t].forEach((row,r)=>row.forEach((v,i)=>{if(v)c.fillRect(x0+i*s,y0+r*s,s-1,s-1)}))}
+function drawField(c,brd,pc,guide){
+  c.clearRect(0,0,200,400);
+  if(guide)guide.forEach(b=>{
+    const g=S.guide==='gray',col=g?GRAY:COLORS[b.type];
+    blk(c,b.x,b.y,col,g?.4:.3);
+    c.save();c.globalAlpha=.7;c.strokeStyle=col;c.strokeRect(b.x*B+.5,b.y*B+.5,B-2,B-2);c.restore()});
+  brd.forEach((row,r)=>row.forEach((t,x)=>{if(t)blk(c,x,r,COLORS[t])}));
+  if(pc){
+    let gy=pc.y;while(!hit(pc.x,gy+1,pc.shape,brd))gy++;
+    pc.shape.forEach((row,r)=>row.forEach((v,i)=>{if(v){blk(c,pc.x+i,gy+r,'#fff',.22);blk(c,pc.x+i,pc.y+r,COLORS[pc.type])}}));
   }
-  if (currentPiece) {
-    const gy = getGhostY();
-    for (let r = 0; r < currentPiece.shape.length; r++) {
-      for (let c = 0; c < currentPiece.shape[r].length; c++) {
-        if (currentPiece.shape[r][c]) {
-          drawBlock(ctx, currentPiece.x + c, gy + r, currentPiece.color, 0.25);
-          drawBlock(ctx, currentPiece.x + c, currentPiece.y + r, currentPiece.color);
+}
+function draw(){
+  const g=S.guide!=='off'&&phase!=='free'&&curKey!=='none'?(steps[stepI]||[]).map(b=>({x:mx(b.x),y:b.y,type:b.type})):null;
+  drawField(ctx,board,cur,g);
+  holdCtx.clearRect(0,0,58,58);
+  if(hold){const s=SHAPES[hold];mini(holdCtx,hold,(58-s[0].length*11)/2,(58-s.length*11)/2,11)}
+  nextCtx.clearRect(0,0,58,290);
+  nextQ.slice(0,5).forEach((t,i)=>mini(nextCtx,t,(58-SHAPES[t][0].length*10)/2,i*55+10,10));
+}
+function loop(){
+  if(curMode==='game'){
+    const now=Date.now();
+    if(!isPaused&&!ended){
+      holdTick(performance.now());
+      if(S.grav>0){
+        let n=Math.floor((now-lastDrop)/S.grav);
+        if(n>0){
+          if(n>20){n=20;lastDrop=now}else lastDrop+=n*S.grav;
+          for(let i=0;i<n&&cur;i++){if(!move(0,1)){if(!lockT)lockT=setTimeout(lockPiece,S.lock);break}}
         }
-      }
-    }
-  }
-  drawMini(holdCtx, holdPiece);
-  drawNext();
-}
-
-function drawMini(c, type) {
-  c.clearRect(0, 0, 58, 58);
-  if (!type) return;
-  const s = SHAPES[type], col = COLORS[type];
-  const ox = (58 - s[0].length * 11) / 2, oy = (58 - s.length * 11) / 2;
-  for (let r = 0; r < s.length; r++) for (let cc = 0; cc < s[r].length; cc++) {
-    if (s[r][cc]) { c.fillStyle = col; c.fillRect(ox + cc * 11, oy + r * 11, 10, 10); }
-  }
-}
-
-function drawNext() {
-  nextCtx.clearRect(0, 0, 58, 180);
-  for (let i = 0; i < Math.min(3, nextQueue.length); i++) {
-    const t = nextQueue[i], s = SHAPES[t], col = COLORS[t];
-    const ox = (58 - s[0].length * 10) / 2;
-    for (let r = 0; r < s.length; r++) for (let c = 0; c < s[r].length; c++) {
-      if (s[r][c]) {
-        nextCtx.fillStyle = col;
-        nextCtx.fillRect(ox + c * 10, i * 55 + r * 10 + 10, 9, 9);
-      }
-    }
-  }
-}
-
-// ---------- ループ & リセット ----------
-function gameLoop() {
-  if (currentMode === 'game') {
-    const now = Date.now();
-    if (!isPaused && now - lastDropTime > DROP_INTERVAL) {
-      if (currentPiece && !move(0, 1)) {
-        if (!lockTimer) lockTimer = setTimeout(lockPiece, LOCK_DELAY);
-      }
-      lastDropTime = now;
+      }else lastDrop=now;
     }
     draw();
-  }
-  requestAnimationFrame(gameLoop);
-}
-
-function resetGame() {
-  board = Array.from({length:ROWS},()=>Array(COLS).fill(null));
-  holdPiece = null; canHold = true;
-  nextQueue = []; currentStepIndex = 0;
-  isMirrored = false;
-  document.getElementById('mirrorBtn').innerText = '反転: OFF';
-  togglePause(false);
-  updateStepDisplay();
-
-  const data = getTemplateData();
-  if (bagMode === 'fixed' && data.sequence) {
-    bag = [...data.sequence];
-  } else {
-    bag = [];
-  }
-  while (nextQueue.length < 5) {
-    refillBagIfNeeded();
-    nextQueue.push(bag.shift());
-  }
-  spawnPiece();
+  }else if(curMode==='rep')repTick();
+  requestAnimationFrame(loop);
 }
 
 // ---------- 入力 ----------
-document.addEventListener('keydown', e => {
-  if (currentMode !== 'game') return;
-  if (e.key === 'p' || e.key === 'P' || e.key === 'Escape') { togglePause(); return; }
-  if (isPaused) return;
-  if (e.repeat && (e.key === 'ArrowUp' || e.key === ' ')) return;
-  switch (e.key) {
-    case 'ArrowLeft': move(-1,0); break;
-    case 'ArrowRight': move(1,0); break;
-    case 'ArrowDown': move(0,1); break;
-    case 'ArrowUp': case ' ': hardDrop(); break;
-    case 'x': case 'X': rotatePiece(1); break;
-    case 'z': case 'Z': rotatePiece(-1); break;
-    case 'c': case 'C': case 'Shift': doHold(); break;
+document.addEventListener('keydown',e=>{
+  if(curMode!=='game')return;
+  if(['p','P','Escape'].includes(e.key)){togglePause();return}
+  if(isPaused)return;
+  if(e.repeat){if(e.key.startsWith('Arrow')||e.key===' ')e.preventDefault();return}
+  switch(e.key){
+    case'ArrowLeft':setHold('L',true);break;case'ArrowRight':setHold('R',true);break;case'ArrowDown':setHold('D',true);break;
+    case'ArrowUp':case' ':hardDrop();break;
+    case'x':case'X':rotate(1);break;case'z':case'Z':rotate(-1);break;
+    case'c':case'C':case'Shift':doHold();break;
   }
+  if(e.key.startsWith('Arrow')||e.key===' ')e.preventDefault();
 });
-
-document.getElementById('pauseBtn').onclick = () => togglePause();
-document.getElementById('btnPauseMobile').onclick = () => togglePause();
-document.getElementById('templateSelect').onchange = e => {
-  currentTemplateKey = e.target.value;
-  resetGame();
-};
-document.getElementById('mirrorBtn').onclick = e => {
-  if (mirrorMode === 'auto') return; // 自動時は手動無効
-  isMirrored = !isMirrored;
-  e.target.innerText = `反転: ${isMirrored ? 'ON' : 'OFF'}`;
-};
-document.getElementById('resetBtn').onclick = resetGame;
-document.getElementById('openEditorBtn').onclick = () => setMode('editor');
-document.getElementById('closeEditorBtn').onclick = () => { setMode('game'); togglePause(false); };
-document.getElementById('openSettingsBtn').onclick = () => setMode('settings');
-document.getElementById('closeSettingsBtn').onclick = () => { setMode('game'); togglePause(false); };
-
-document.getElementById('bagModeSelect').onchange = e => {
-  bagMode = e.target.value;
-  resetGame();
-};
-document.getElementById('mirrorModeSelect').onchange = e => {
-  mirrorMode = e.target.value;
-  if (mirrorMode === 'manual') {
-    document.getElementById('mirrorBtn').style.opacity = '1';
-  } else {
-    document.getElementById('mirrorBtn').style.opacity = '0.5';
+const hk={};let hkLast='';
+const actK=k=>k==='L'?move(-1,0):k==='R'?move(1,0):move(0,1);
+function setHold(k,on){
+  if(!on){delete hk[k];return}
+  if(hk[k]||isPaused||ended)return;
+  if(k!=='D')hkLast=k;
+  hk[k]={t:performance.now(),last:null};
+  actK(k);
+}
+function holdTick(now){
+  for(const k of['L','R','D']){
+    const h=hk[k];if(!h)continue;
+    if((k==='L'&&hk.R&&hkLast==='R')||(k==='R'&&hk.L&&hkLast==='L'))continue;
+    const das=k==='D'?0:S.das,arr=k==='D'?S.sd:S.arr;
+    if(now-h.t<das)continue;
+    if(arr<=0){while(actK(k)){}continue}
+    if(h.last===null)h.last=k==='D'?h.t:h.t+das-arr;
+    let n=Math.floor((now-h.last)/arr);
+    if(n>20){n=20;h.last=now}else h.last+=n*arr;
+    for(let i=0;i<n;i++)actK(k);
   }
+}
+const KM={ArrowLeft:'L',ArrowRight:'R',ArrowDown:'D'};
+document.addEventListener('keyup',e=>{if(KM[e.key])setHold(KM[e.key],false)});
+addEventListener('blur',()=>{for(const k in hk)delete hk[k]});
+function bindHold(id,k){
+  const el=$(id),st=e=>{e.preventDefault();setHold(k,true)},sp=()=>setHold(k,false);
+  el.addEventListener('touchstart',st,{passive:false});el.addEventListener('mousedown',st);
+  ['touchend','touchcancel','mouseup','mouseleave'].forEach(n=>el.addEventListener(n,sp));
+}
+function bindSingle(id,fn){
+  const f=e=>{e.preventDefault();if(!isPaused)fn()};
+  $(id).addEventListener('touchstart',f,{passive:false});$(id).addEventListener('mousedown',f);
+}
+bindHold('bL','L');bindHold('bR','R');bindHold('bD','D');
+bindSingle('bDrop',hardDrop);bindSingle('bCW',()=>rotate(1));bindSingle('bCCW',()=>rotate(-1));bindSingle('bHold',doHold);
+$('bP').onclick=$('pauseBtn').onclick=()=>togglePause();
+$('resetBtn').onclick=resetGame;
+$('mirrorBtn').onclick=()=>{if(S.mirror==='auto')return;mirrored=!mirrored;$('mirrorBtn').textContent=`反転: ${mirrored?'ON':'OFF'}`};
+$('tplSel').onchange=e=>{curKey=e.target.value;resetGame()};
+$('edBtn').onclick=()=>setMode('edit');$('edClose').onclick=()=>setMode('game');
+$('setBtn').onclick=()=>setMode('set');$('setClose').onclick=()=>setMode('game');
+[['guideSel','guide'],['mirrorSel','mirror'],['modeSel','mode'],['dasIn','das'],['arrIn','arr'],['sdIn','sd'],['gravIn','grav'],['lockIn','lock']].forEach(([id,k])=>{
+  const e=$(id);e.value=S[k];
+  e.onchange=()=>{S[k]=e.type==='number'?Math.max(0,Math.floor(+e.value||0)):e.value;e.value=S[k];saveS();$('mirrorBtn').style.opacity=S.mirror==='auto'?.5:1;if(k==='mode'||k==='mirror')resetGame()};
+});
+$('mirrorBtn').style.opacity=S.mirror==='auto'?.5:1;
+
+// ---------- テンプレ一覧 ----------
+function saveT(){try{localStorage.setItem('ttpTemplates',JSON.stringify(tpls))}catch{}refreshUI()}
+function refreshUI(){
+  const sel=$('tplSel');
+  while(sel.options.length>1)sel.remove(1);
+  Object.keys(tpls).forEach(n=>{const o=document.createElement('option');o.value=n;o.textContent=n;sel.appendChild(o)});
+  if(!(curKey in tpls))curKey='none';
+  sel.value=curKey;
+  const l=$('savedList');l.innerHTML='';
+  const ns=Object.keys(tpls);
+  if(!ns.length){l.innerHTML='<div class="dim">保存済みテンプレはありません</div>';return}
+  ns.forEach(n=>{
+    const d=document.createElement('div');d.className='item';
+    const s=document.createElement('span');s.textContent=n;d.appendChild(s);
+    [['練習',()=>practice(n)],['編集',()=>editTpl(n)],['削除',()=>{if(confirm(`「${n}」を削除しますか？`)){delete tpls[n];saveT()}}]].forEach(([t,f])=>{
+      const b=document.createElement('button');b.textContent=t;if(t==='削除')b.className='del';b.onclick=f;d.appendChild(b)});
+    l.appendChild(d);
+  });
+}
+function practice(n){curKey=n;refreshUI();setMode('game');resetGame()}
+function editTpl(n){$('out').value=tpls[n];loadText();$('name').value=n;scrollTo(0,0)}
+
+// ---------- テンプレ作成エディタ ----------
+const ER=16,EC=10,CS=24;
+const MINOS={O:[['O','O'],['O','O']],I:[['I','I','I','I']],J:[['J','.','.'],['J','J','J']],L:[['.','.','L'],['L','L','L']],S:[['.','S','S'],['S','S','.']],Z:[['Z','Z','.'],['.','Z','Z']],T:[['.','T','.'],['T','T','T']],X:[['X']]};
+const rotE=m=>m[0].map((_,c)=>m.map((_,r)=>m[m.length-1-r][c]));
+const rots=t=>{let m=MINOS[t],o=[];for(let i=0;i<4;i++){const q=[];m.forEach((row,r)=>row.forEach((v,c)=>{if(v!=='.')q.push([r,c])}));o.push(q);m=rotE(m)}return o};
+const newGrid=()=>Array.from({length:ER},()=>Array.from({length:EC},()=>({t:'.',id:0})));
+let eSteps=[newGrid()],eI=0,pc=0,drag=null,start=null,moving=false,hl=[],cells=[];
+const eg=()=>eSteps[eI];
+const tcol=t=>t==='.'?'#252538':COLORS[t];
+const tfg=t=>t==='.'?'#45475a':'JTZX'.includes(t)?'#fff':'#000';
+const gh=$('ghost');
+
+function prev(shape,s){
+  const d=document.createElement('div');
+  d.style.cssText=`display:grid;gap:1px;background:#11111b;padding:2px;border-radius:3px;pointer-events:none;grid-template-columns:repeat(${shape[0].length},${s}px)`;
+  shape.forEach(row=>row.forEach(t=>{const e=document.createElement('div');e.style.cssText=`width:${s}px;height:${s}px;background:${tcol(t)}`;d.appendChild(e)}));
+  return d;
+}
+function canPlace(r,c,sh,id){
+  const g=eg();
+  return sh.every((row,dr)=>row.every((t,dc)=>{
+    if(t==='.')return true;
+    const R=r+dr,C=c+dc;
+    if(R<0||R>=ER||C<0||C>=EC)return false;
+    const q=g[R][C];return q.t==='.'||q.id===id}));
+}
+function rm(id){eg().forEach(row=>row.forEach((q,i)=>{if(q.id===id)row[i]={t:'.',id:0}}))}
+function put(r,c,sh,id){sh.forEach((row,dr)=>row.forEach((t,dc)=>{if(t!=='.')eg()[r+dr][c+dc]={t,id}}))}
+function extract(id){
+  const g=eg();let a=ER,b=-1,c0=EC,d=-1;
+  g.forEach((row,r)=>row.forEach((q,c)=>{if(q.id===id){a=Math.min(a,r);b=Math.max(b,r);c0=Math.min(c0,c);d=Math.max(d,c)}}));
+  const shape=[];
+  for(let r=a;r<=b;r++)shape.push(g[r].slice(c0,d+1).map(q=>q.id===id?q.t:'.'));
+  return{shape,minR:a,minC:c0};
+}
+function rotBoard(id){const i=extract(id),s=rotE(i.shape);if(canPlace(i.minR,i.minC,s,id)){rm(id);put(i.minR,i.minC,s,id)}}
+
+function renderEd(){
+  const g=eg(),el=$('egrid');el.innerHTML='';cells=[];
+  const same=(r,c,id)=>g[r]&&g[r][c]&&g[r][c].id===id;
+  for(let r=0;r<ER;r++){cells[r]=[];for(let c=0;c<EC;c++){
+    const d=g[r][c],e=document.createElement('div');
+    e.className='cell';e.dataset.r=r;e.dataset.c=c;e.textContent=d.t;
+    e.style.background=tcol(d.t);e.style.color=tfg(d.t);
+    if(d.t!=='.'){
+      const sh=[];
+      if(!same(r-1,c,d.id))sh.push('inset 0 2px #fff');
+      if(!same(r+1,c,d.id))sh.push('inset 0 -2px #fff');
+      if(!same(r,c-1,d.id))sh.push('inset 2px 0 #fff');
+      if(!same(r,c+1,d.id))sh.push('inset -2px 0 #fff');
+      e.style.boxShadow=sh.join(',');
+    }
+    e.addEventListener('pointerdown',ev=>{
+      start={x:ev.clientX,y:ev.clientY};moving=false;
+      if(d.t==='.'){drag=null;return}
+      const i=extract(d.id);
+      drag={shape:i.shape,id:d.id,src:'board',oR:r-i.minR,oC:c-i.minC,tap:()=>rotBoard(d.id)};
+    });
+    el.appendChild(e);cells[r][c]=e;
+  }}
+  const tabs=$('stepTabs');tabs.innerHTML='';
+  eSteps.forEach((_,i)=>{const b=document.createElement('button');b.textContent='STEP '+(i+1);if(i===eI)b.className='on';b.onclick=()=>{eI=i;renderEd()};tabs.appendChild(b)});
+}
+Object.entries(MINOS).forEach(([k,sh0])=>{
+  let sh=sh0;
+  const card=document.createElement('div');card.className='card';
+  const lab=document.createElement('div');lab.textContent=k;lab.style.cssText='font-size:9px;font-weight:bold;color:#bac2de';
+  card.appendChild(lab);
+  let pv=prev(sh,8);card.appendChild(pv);
+  card.addEventListener('pointerdown',ev=>{
+    start={x:ev.clientX,y:ev.clientY};moving=false;
+    drag={shape:sh,id:null,src:'palette',oR:sh.length>>1,oC:sh[0].length>>1,tap:()=>{sh=rotE(sh);const n=prev(sh,8);card.replaceChild(n,pv);pv=n}};
+  });
+  $('palette').appendChild(card);
+});
+function clearHl(){hl.forEach(e=>e.classList.remove('ok','bad'));hl=[]}
+function showHl(x,y){
+  clearHl();
+  const el=document.elementFromPoint(x,y);if(!el)return;
+  const tr=el.closest('#trash');
+  if(tr){tr.classList.add('ok');hl.push(tr);return}
+  const ce=el.closest('.cell');if(!ce)return;
+  const r0=+ce.dataset.r-drag.oR,c0=+ce.dataset.c-drag.oC,ok=canPlace(r0,c0,drag.shape,drag.id);
+  drag.shape.forEach((row,dr)=>row.forEach((t,dc)=>{
+    const e=t!=='.'&&cells[r0+dr]&&cells[r0+dr][c0+dc];
+    if(e){e.classList.add(ok?'ok':'bad');hl.push(e)}}));
+}
+addEventListener('pointermove',e=>{
+  if(!drag)return;
+  if(!moving&&Math.hypot(e.clientX-start.x,e.clientY-start.y)>6){moving=true;gh.innerHTML='';gh.appendChild(prev(drag.shape,CS));gh.style.display='block'}
+  if(moving){gh.style.left=e.clientX-(drag.oC+.5)*CS+'px';gh.style.top=e.clientY-(drag.oR+.5)*CS+'px';showHl(e.clientX,e.clientY)}
+});
+addEventListener('pointerup',e=>{
+  if(!drag)return;
+  clearHl();
+  const el=document.elementFromPoint(e.clientX,e.clientY);
+  if(moving&&el){
+    if(el.closest('#trash')){if(drag.src==='board')rm(drag.id)}
+    else{
+      const ce=el.closest('.cell');
+      if(ce){
+        const r0=+ce.dataset.r-drag.oR,c0=+ce.dataset.c-drag.oC;
+        if(canPlace(r0,c0,drag.shape,drag.id)){
+          if(drag.src==='board')rm(drag.id);
+          put(r0,c0,drag.shape,drag.id||++pc);
+        }
+      }
+    }
+  }else if(!moving&&drag.tap)drag.tap();
+  gh.style.display='none';drag=null;moving=false;renderEd();
+});
+addEventListener('pointercancel',()=>{if(drag){clearHl();gh.style.display='none';drag=null;moving=false}});
+
+const gridText=g=>{const l=g.map(r=>r.map(c=>c.t).join(''));while(l.length&&/^\.+$/.test(l[0]))l.shift();return l.join('\n')};
+function genText(){$('out').value=eSteps.map(gridText).join('\n---\n')}
+// 同種ミノの全探索による厳密なテトロミノ分割（メモ化付き）。分割できないマスは X にする
+function partition(cs,t){
+  const idx=new Map(cs.map((c,i)=>[c.r+','+c.c,i])),shapes=rots(t),memo=new Map();
+  const solve=rem=>{
+    if(rem.length<4)return{p:[],l:rem};
+    const key=rem.join();if(memo.has(key))return memo.get(key);
+    const set=new Set(rem),t0=cs[rem[0]];let best=null;
+    for(const s of shapes)for(const pt of s){
+      const ids=s.map(q=>idx.get((t0.r-pt[0]+q[0])+','+(t0.c-pt[1]+q[1])));
+      if(ids.every(i=>i!==undefined&&set.has(i))){
+        const res=solve(rem.filter(i=>!ids.includes(i))),cand={p:[ids,...res.p],l:res.l};
+        if(!best||cand.l.length<best.l.length)best=cand;
+      }
+    }
+    const sk=solve(rem.slice(1)),c2={p:sk.p,l:[rem[0],...sk.l]};
+    if(!best||c2.l.length<best.l.length)best=c2;
+    memo.set(key,best);return best;
+  };
+  return solve(cs.map((_,i)=>i));
+}
+function textToGrid(text){
+  const g=newGrid(),lines=text.split('\n').map(l=>l.trim()).filter(Boolean).slice(-ER),grp={},base=ER-lines.length;
+  lines.forEach((line,i)=>[...line].slice(0,EC).forEach((ch,c)=>{
+    ch=ch.toUpperCase();const r=base+i;
+    if(ch==='X')g[r][c]={t:'X',id:++pc};
+    else if('IJLOSTZ'.includes(ch))(grp[ch]=grp[ch]||[]).push({r,c});
+  }));
+  for(const t in grp){
+    const cs=grp[t],res=partition(cs,t);
+    res.p.forEach(ids=>{const id=++pc;ids.forEach(i=>{g[cs[i].r][cs[i].c]={t,id}})});
+    res.l.forEach(i=>{g[cs[i].r][cs[i].c]={t:'X',id:++pc}});
+  }
+  return g;
+}
+function loadText(){
+  const parts=$('out').value.split(/^\s*---\s*$/m).filter(p=>p.trim());
+  if(!parts.length)return;
+  eSteps=parts.map(textToGrid);eI=0;renderEd();
+}
+$('genBtn').onclick=genText;
+$('loadBtn').onclick=loadText;
+$('sampleBtn').onclick=()=>{$('out').value=SAMPLE;loadText();$('name').value='山岳積み2号'};
+$('copyBtn').onclick=()=>{
+  genText();const v=$('out').value;
+  (navigator.clipboard?navigator.clipboard.writeText(v):Promise.reject()).catch(()=>{$('out').select();document.execCommand('copy')}).then(()=>toast('コピーしました'));
+};
+$('addStep').onclick=()=>{eSteps.splice(eI+1,0,eg().map(r=>r.map(q=>({...q}))));eI++;renderEd()};
+$('delStep').onclick=()=>{if(eSteps.length>1){eSteps.splice(eI,1);eI=Math.min(eI,eSteps.length-1);renderEd()}};
+$('clrBtn').onclick=()=>{eSteps=[newGrid()];eI=0;$('out').value='';renderEd()};
+$('saveBtn').onclick=()=>{
+  const n=$('name').value.trim();
+  if(!n)return toast('テンプレ名を入力してください');
+  if(n==='none')return toast('予約名です');
+  genText();
+  if(!parseSteps($('out').value).length)return toast('ブロックがありません');
+  tpls[n]=$('out').value;saveT();toast(`「${n}」を保存しました`);practice(n);
 };
 
-// モバイル長押し
-const activeIntervals = {};
-function bindRepeat(id, fn) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const start = e => {
-    e.preventDefault();
-    if (isPaused) return;
-    fn();
-    clearTimeout(activeIntervals[id]);
-    activeIntervals[id] = setTimeout(() => {
-      activeIntervals[id] = setInterval(() => { if (!isPaused) fn(); }, 60);
-    }, 170);
-  };
-  const stop = e => {
-    if (e?.cancelable) e.preventDefault();
-    clearTimeout(activeIntervals[id]);
-    clearInterval(activeIntervals[id]);
-    delete activeIntervals[id];
-  };
-  el.addEventListener('touchstart', start, {passive:false});
-  el.addEventListener('touchend', stop);
-  el.addEventListener('touchcancel', stop);
-  el.addEventListener('mousedown', start);
-  el.addEventListener('mouseup', stop);
-  el.addEventListener('mouseleave', stop);
+// ---------- 履歴・リプレイ ----------
+const STL={complete:'完成',fire:'発火後',over:'発火→ゲームオーバー'};
+function histList(el,arr,pinned){
+  el.innerHTML='';
+  if(!arr.length){el.innerHTML='<div class="dim">履歴はありません</div>';return}
+  arr.forEach((e,i)=>{
+    const d=document.createElement('div');d.className='item';
+    const s=document.createElement('span');s.textContent=`${e.n}｜${STL[e.st]}｜${e.s}秒｜${e.p}ミノ${e.a!==undefined?`｜送${e.a}`:''}`;
+    const sm=document.createElement('small');sm.textContent=new Date(e.d).toLocaleString('ja-JP');s.appendChild(sm);d.appendChild(s);
+    const add=(t,f,c)=>{const b=document.createElement('button');b.textContent=t;if(c)b.className=c;b.onclick=f;d.appendChild(b)};
+    add('リプレイ',()=>openReplay(e));
+    if(pinned)add('削除',()=>{pins.splice(i,1);store('ttpPins',pins);renderHist()},'del');
+    else add('固定',()=>{if(pins.length>=5)return toast('固定履歴が満杯です');pins.push({...e});store('ttpPins',pins);renderHist()});
+    el.appendChild(d);
+  });
 }
-function bindSingle(id, fn) {
-  const el = document.getElementById(id);
-  if (!el) return;
-  const f = e => { e.preventDefault(); if (!isPaused) fn(); };
-  el.addEventListener('touchstart', f, {passive:false});
-  el.addEventListener('mousedown', f);
+function renderHist(){histList($('histAuto'),hist,false);histList($('histPins'),pins,true);$('pinCnt').textContent=`${pins.length}/5`}
+let rp=null;
+const shapeOf=(t,r)=>{let s=SHAPES[t].map(a=>[...a]);for(let i=0;i<r;i++)s=rotM(s,1);return s};
+function openReplay(e){
+  const l=e.ev[e.ev.length-1];
+  rp={e,T:0,play:true,sp:+$('repSp').value,last:performance.now(),dur:(l?l[0]:0)+500};
+  $('repSeek').max=rp.dur;$('repPlay').textContent='⏸';
+  $('repTitle').textContent=`${e.n}｜${STL[e.st]}｜${e.s}秒`;
+  setMode('rep');
 }
-bindRepeat('btnLeft', () => move(-1,0));
-bindRepeat('btnRight', () => move(1,0));
-bindRepeat('btnDown', () => move(0,1));
-bindSingle('btnHardDrop', hardDrop);
-bindSingle('btnRotCW', () => rotatePiece(1));
-bindSingle('btnRotCCW', () => rotatePiece(-1));
-bindSingle('btnHold', doHold);
+function repTick(){
+  if(!rp)return;
+  const now=performance.now();
+  if(rp.play){rp.T+=(now-rp.last)*rp.sp;if(rp.T>=rp.dur){rp.T=rp.dur;rp.play=false;$('repPlay').textContent='▶'}}
+  rp.last=now;
+  $('repSeek').value=rp.T;$('repTime').textContent=`${(rp.T/1000).toFixed(1)} / ${(rp.dur/1000).toFixed(1)}秒`;
+  const b=Array.from({length:ROWS},()=>Array(COLS).fill(null));let pe=null;
+  for(const e of rp.e.ev){
+    if(e[0]>rp.T)break;
+    if(e[1]==='L'){
+      if(pe){
+        shapeOf(pe[1],pe[4]).forEach((row,r)=>row.forEach((v,c)=>{const y=pe[3]+r,x=pe[2]+c;if(v&&y>=0&&y<ROWS)b[y][x]=pe[1]}));
+        for(let r=ROWS-1;r>=0;r--)if(b[r].every(v=>v)){b.splice(r,1);b.unshift(Array(COLS).fill(null));r++}
+      }
+      pe=null;
+    }else pe=e;
+  }
+  drawField($('repCanvas').getContext('2d'),b,pe&&{type:pe[1],x:pe[2],y:pe[3],shape:shapeOf(pe[1],pe[4])},null);
+}
+$('histBtn').onclick=()=>setMode('hist');$('histClose').onclick=()=>setMode('game');$('repClose').onclick=()=>setMode('hist');
+$('repPlay').onclick=()=>{if(!rp)return;if(!rp.play&&rp.T>=rp.dur)rp.T=0;rp.play=!rp.play;rp.last=performance.now();$('repPlay').textContent=rp.play?'⏸':'▶'};
+$('repSp').onchange=e=>{if(rp)rp.sp=+e.target.value};
+$('repSeek').oninput=e=>{if(rp){rp.T=+e.target.value;rp.play=false;$('repPlay').textContent='▶'}};
 
-// 保存
-document.getElementById('saveTemplateBtn').onclick = () => {
-  const name = document.getElementById('templateName').value.trim();
-  const text = document.getElementById('templateText').value;
-  if (!name) { showToast('名前を入力してください'); return; }
-  if (BUILTIN_TEMPLATES[name] || name === 'none') { showToast('予約名です'); return; }
-  const steps = parseMultiStepTemplateText(text);
-  if (!steps.length) { showToast('有効なブロックがありません'); return; }
-  userTemplates[name] = steps;
-  saveUserTemplates();
-  document.getElementById('templateName').value = '';
-  document.getElementById('templateText').value = '';
-  showToast(`「${name}」を保存しました`);
-  setMode('game');
-  document.getElementById('templateSelect').value = 'user:' + name;
-  currentTemplateKey = 'user:' + name;
-  resetGame();
-};
-
-// 初期化
-loadUserTemplates();
-resetGame();
-gameLoop();
+// ---------- 初期化 ----------
+renderEd();refreshUI();resetGame();loop();
 </script>
 </body>
 </html>
